@@ -390,7 +390,7 @@
             const vh = window.innerHeight;
 
             // 80% 均匀分布全屏，20% 边缘入侵
-            const isEdge = Math.random() < 0.2;
+            const isEdge = Math.random() < 0.1;
             let left, top;
 
             if (isEdge) {
@@ -498,17 +498,21 @@
         }
 
         // Heart 爱心（正确显示）
+      
         function createHeart() {
-            const h = document.createElement('div');
-            h.className = 'heart';
-            h.innerHTML = 'Heart'; // 正确显示红心
-            h.style.left = Math.random() * window.innerWidth + 'px';
-            h.style.top = Math.random() * window.innerHeight + 'px';
-            h.style.fontSize = (16 + Math.random() * 16) + 'px';
-            h.style.color = cuteThemes[Math.floor(Math.random() * cuteThemes.length)].bg;
-            h.style.animationDelay = `${Math.random() * 6}s`;
-            document.body.appendChild(h);
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.innerHTML = '❤';
+            heart.style.left = Math.random() * window.innerWidth + 'px';
+            heart.style.top = Math.random() * window.innerHeight + 'px';
+            heart.style.fontSize = (Math.random() * 15 + 8) + 'px';
+            heart.style.opacity = Math.random() * 0.3 + 0.1;
+            heart.style.animationDelay = `${Math.random() * 10}s`;
+            document.body.appendChild(heart);
         }
+        
+
+
 
         function createClickHeart(x, y) {
             const h = document.createElement('div');
