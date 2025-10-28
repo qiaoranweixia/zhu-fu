@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>熊猫烧香式祝福弹幕</title>
+    <title>熊猫烧香祝福弹幕 · 溢出入侵版</title>
     <style>
         * {
             margin: 0;
@@ -17,36 +17,41 @@
             height: 100vh;
             font-family: 'Microsoft YaHei', sans-serif;
             position: relative;
-            /* 优化：允许滚动，只阻止弹窗拖动 */
             -webkit-overflow-scrolling: touch;
             touch-action: pan-y pan-x;
+            /* 关键：允许弹窗溢出 */
+            transform: translateZ(0);
         }
         
+        /* 弹窗：无边框、无阴影、仅内容+关闭按钮 */
         .message-popup {
             position: absolute;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 12px 18px;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.96);
+            padding: 10px 16px;
+            border-radius: 12px;
             z-index: 10;
-            max-width: 240px;
+            max-width: 220px;
             text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
             transform: scale(0);
             opacity: 0;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
             cursor: pointer;
             user-select: none;
-            animation: float 15s infinite linear;
-            touch-action: manipulation; /* 允许点击 */
+            animation: float 12s infinite linear;
+            touch-action: manipulation;
+            /* 移除边框、阴影 */
+            border: none !important;
+            box-shadow: none !important;
+            /* 允许溢出 */
+            clip-path: none;
         }
         
         @keyframes float {
             0% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(-5px) rotate(1deg); }
+            25% { transform: translateY(-4px) rotate(1deg); }
             50% { transform: translateY(0) rotate(0deg); }
-            75% { transform: translateY(5px) rotate(-1deg); }
+            75% { transform: translateY(4px) rotate(-1deg); }
             100% { transform: translateY(0) rotate(0deg); }
         }
         
@@ -64,122 +69,127 @@
             font-size: 14px;
             color: #333;
             line-height: 1.4;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            word-break: keep-all;
+            font-weight: 500;
         }
         
         .close-btn {
             position: absolute;
-            top: 5px;
-            right: 8px;
-            font-size: 16px;
-            color: #999;
+            top: 4px;
+            right: 6px;
+            font-size: 15px;
+            color: #aaa;
             cursor: pointer;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            transition: all 0.3s;
+            transition: all 0.2s;
+            z-index: 11;
+            background: rgba(255,255,255,0.8);
         }
         
-        .close-btn:hover {
-            background: rgba(0, 0, 0, 0.1);
-            color: #ff6b6b;
+        .close-btn:hover,
+        .close-btn:active {
+            background: #ff6b6b;
+            color: white;
+            transform: scale(1.1);
         }
         
+        /* 控制面板 */
         .control-panel {
             position: fixed;
             top: 10px;
-            right: 10px;
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 15px;
+            padding: 14px;
+            border-radius: 16px;
             color: #333;
             z-index: 100;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(10px);
-            width: 250px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+            width: calc(100vw - 40px);
+            max-width: 300px;
             transition: all 0.3s ease;
             opacity: 0;
-            transform: translateY(-20px);
             pointer-events: none;
         }
         
         .control-panel.show {
             opacity: 1;
-            transform: translateY(0);
             pointer-events: all;
+            transform: translateX(-50%) translateY(0);
         }
         
         .control-panel h3 {
             margin-bottom: 10px;
             text-align: center;
             color: #ff6b6b;
-            font-size: 18px;
+            font-size: 17px;
         }
         
         .control-panel button {
             background: #ff9e7d;
             border: none;
             color: white;
-            padding: 10px 12px;
-            margin: 8px 0;
+            padding: 9px 11px;
+            margin: 7px 0;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 14px;
+            font-size: 13px;
             width: 100%;
         }
         
-        .control-panel button:hover {
+        .control-panel button:hover,
+        .control-panel button:active {
             background: #ff6b6b;
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
         
         .settings-btn {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
+            bottom: 18px;
+            right: 18px;
+            width: 48px;
+            height: 48px;
             background: #ff6b6b;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
             z-index: 99;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             transition: all 0.3s;
         }
         
-        .settings-btn:hover {
-            transform: rotate(90deg);
+        .settings-btn:hover,
+        .settings-btn:active {
+            transform: rotate(90deg) scale(1.05);
             background: #ff9e7d;
         }
         
         .heart {
             position: absolute;
-            font-size: 18px;
+            font-size: 16px;
             color: #ff6b6b;
-            opacity: 0.7;
+            opacity: 0.6;
             z-index: 0;
             pointer-events: none;
-            animation: floatHeart 12s infinite ease-out;
+            animation: floatHeart 10s infinite ease-out;
         }
         
         @keyframes floatHeart {
-            0% { transform: translate(0, 0) rotate(0deg); opacity: 0.4; }
-            100% { transform: translate(80px, -80px) rotate(360deg); opacity: 0; }
-        }
-        
-        .heart::before {
-            content: '';
-            display: block;
-            animation-delay: var(--delay);
+            0% { transform: translate(0, 0) scale(0); opacity: 0.4; }
+            20% { opacity: 1; }
+            100% { transform: translate(70px, -70px) scale(1.3); opacity: 0; }
         }
         
         .send-message {
@@ -197,21 +207,22 @@
         
         .send-message textarea {
             width: 100%;
-            height: 60px;
+            height: 50px;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 10px;
             resize: none;
-            font-size: 12px;
+            font-size: 13px;
             margin-bottom: 8px;
+            font-family: inherit;
         }
         
         .send-message button {
             background: #4ECDC4;
-            margin-bottom: 0;
         }
         
-        .send-message button:hover {
+        .send-message button:hover,
+        .send-message button:active {
             background: #2EC4B6;
         }
         
@@ -222,169 +233,91 @@
             text-align: center;
         }
 
-        /* 心形爆破动画（彩蛋） */
-        @keyframes heartBurst {
-            0% { transform: scale(0) rotate(0deg); opacity: 1; }
-            100% { transform: scale(1.5) rotate(360deg); opacity: 0; top: -50px; }
-        }
-
-        /* 移动端优化（增强版） */
+        /* 移动端优化 */
         @media (max-width: 768px) {
             .message-popup { 
                 max-width: 160px; 
                 padding: 8px 12px; 
-                font-size: 13px !important; 
-                line-height: 1.3; 
-                border-radius: 12px;
+                border-radius: 10px;
             }
             .message-content { 
                 font-size: 13px !important; 
-                margin-bottom: 6px; 
             }
-            .close-btn {
-                width: 18px;
-                height: 18px;
-                font-size: 14px;
-                top: 4px;
-                right: 6px;
+            .close-btn { 
+                width: 16px; height: 16px; font-size: 13px; top: 3px; right: 5px;
             }
-
             .control-panel { 
-                width: calc(100vw - 40px); 
-                max-width: 300px; 
-                right: 20px; 
-                left: 20px; 
-                margin: 0 auto; 
+                width: calc(100vw - 30px); 
                 padding: 12px; 
-                transform: translateY(-20px); 
-            }
-            .control-panel.show {
-                transform: translateY(0);
-            }
-
-            .settings-btn { 
-                width: 48px; 
-                height: 48px; 
-                font-size: 22px; 
-                bottom: 18px; 
-                right: 18px; 
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
-            }
-
-            .send-message textarea {
-                height: 50px;
-                font-size: 13px;
             }
         }
         
         @media (max-width: 480px) {
-            .message-popup { 
-                max-width: 140px; 
-                padding: 7px 10px; 
-                font-size: 12px !important; 
-            }
-            .message-content { 
-                font-size: 12px !important; 
-            }
-            .control-panel { 
-                width: calc(100vw - 30px); 
-                padding: 10px; 
-            }
-            .control-panel button { 
-                padding: 7px 8px; 
-                font-size: 12px; 
-            }
+            .message-popup { max-width: 140px; padding: 7px 10px; }
+            .message-content { font-size: 12px !important; }
+            .control-panel button { padding: 7px 8px; font-size: 12px; }
+        }
+
+        @keyframes heartBurst {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1.6) rotate(360deg); opacity: 0; top: -60px; }
         }
     </style>
 </head>
 <body>
     <div class="control-panel">
-        <h3>控制面板</h3>
-        <button id="startBtn">开始显示</button>
-        <button id="clearBtn">一键清屏</button>
+        <h3>熊猫烧香祝福机</h3>
+        <button id="startBtn">开始入侵</button>
+        <button id="clearBtn">清屏撤退</button>
         
-        <div class="music-info" id="musicInfo">背景音乐: a.mp3（自动播放）</div>
+        <div class="music-info" id="musicInfo">背景音乐: a.mp3（点击播放）</div>
         
         <div class="send-message">
-            <h4>发送祝福语</h4>
-            <textarea id="customMessage" placeholder="输入您的祝福语..."></textarea>
-            <button id="sendBtn">发送祝福</button>
+            <h4>发送你的爱</h4>
+            <textarea id="customMessage" placeholder="说点甜的..."></textarea>
+            <button id="sendBtn">发送</button>
         </div>
     </div>
     
     <div class="settings-btn">⚙️</div>
 
     <script>
-        // 关心祝福短语（包含颜文字）
-        let careTexts = [
-            "多喝点热水哦～ (●'◡'●)", 
-            "记得按时吃饭 (￣▽￣)~*",
-            "天冷了，多穿衣服 (｡･ω･｡)",
-            "我想你了 (❤ ω ❤)",
-            "早点休息，别熬夜 (～﹃～)~zZ",
-            "记得吃水果 (★ ω ★)",
-            "工作再忙也要照顾好自己 (ง •_•)ง",
-            "今天过得开心吗？ (◕‿◕)",
-            "记得微笑哦 (^_−)☆",
-            "要对自己好一点 (づ｡◕‿‿◕｡)づ",
-            "累了就休息一下 (～o￣3￣)～",
-            "别忘了多喝水 (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
-            "今天天气不错，出去走走吧 ヽ(✿ﾟ▽ﾟ)ノ",
-            "要记得按时吃饭 ( •̀ ω •́ )✧",
-            "别太辛苦了 (；一_一)",
-            "注意身体哦 (。・∀・)ノ",
-            "记得放松一下 (￣o￣) . z Z",
-            "心情要美美的 (＾▽＾)",
-            "要开心每一天 o(〃'▽'〃)o",
-            "照顾好自己 (•‾̑⌣‾̑•)✧˖°",
-            "记得想我 (´▽`ʃ♡ƪ)",
-            "别让自己太累 (┬┬﹏┬┬)",
-            "注意休息 (∪｡∪)｡｡｡zzz",
-            "记得保暖 (｡•́︿•̀｡)",
-            "要好好吃饭 (๑•̀ㅂ•́)و✧",
-            "记得微笑 (ノ◕ヮ◕)ノ*:・゚✧",
-            "别熬夜了 (;´･ω･)",
-            "多运动运动 ٩(◕‿◕｡)۶",
-            "记得补充维生素 (◠‿◠✿)",
-            "要照顾好自己 (｡◕‿◕｡)",
-            "记得吃早餐哦 (๑´ڡ`๑)",
-            "保持好心情 (◍•ᴗ•◍)❤",
-            "不要忘记微笑 ヾ(◍°∇°◍)ﾉﾞ",
-            "一切都会好起来的 (•̀ᴗ•́)و",
-            "你是最棒的 (☆▽☆)",
-            "加油哦 ٩(๑❛ᴗ❛๑)۶",
-            "记得多喝水 (๑•̀ㅂ•́)و",
-            "好好照顾自己 (｡•̀ᴗ-)✧",
-            "记得想我哦 (´･ω･`)?",
-            "保持联系 (●ˇ∀ˇ●)",
-            "一切顺利 (＾ω＾)",
-            "保重身体 (｀・ω・´)",
-            "注意安全 (。・∀・)ノ",
-            "天天开心 ヾ(✿ﾟ▽ﾟ)ノ",
-            "一切安好 (´｡• ᵕ •｡`)",
-            "要幸福哦 (◕‿◕)♡",
-            "保重身体 (๑•̀ㅁ•́ฅ)",
-            "记得休息 (。-ω-)zzz",
-            "一切顺利 (￣▽￣)/",
-            "保重 (｡•́︿•̀｡)",
-            "期待下一次见面 (◕‿◕✿)",
-            "期待下一次旅行 ヽ(✿ﾟ▽ﾟ)ノ",
-            "期待再次相聚 (★ ω ★)",
-            "盼望下次见面 (❤ ω ❤)",
-            "期待下次一起旅行 (｡･ω･｡)",
-            "盼望再次相见 (◕‿◕)",
-            "期待下次相聚 (づ｡◕‿‿◕｡)づ",
-            "盼望下一次见面 (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
-            "期待下一次旅行 (◠‿◠✿)",
-            "盼望再次相聚 (｡◕‿◕｡)",
+        // 【新增60+条祝福语】温暖、搞怪、情侣、亲人、朋友全覆盖
+        const careTexts = [
+            "多喝热水哦～ (●'◡'●)", "记得按时吃饭呀 (￣▽￣)~", "天冷了多穿点 (｡･ω･｡)", 
+            "我想你了 (❤ ω ❤)", "早点睡，别熬夜 (～﹃～)~zZ", "记得吃水果 (★ ω ★)", 
+            "再忙也要照顾自己 (ง •_•)ง", "今天开心吗？ (◕‿◕)", "记得微笑 (^_−)☆", 
+            "对自己好一点 (づ｡◕‿‿◕｡)づ", "累了就休息 (～o￣3￣)～", "多喝水 (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
+            "出去走走吧 ヽ(✿ﾟ▽ﾟ)ノ", "别太辛苦了 (；一_一)", "注意身体哦 (。・∀・)ノ", 
+            "放松一下 (￣o￣) . z Z", "心情要美美哒 (＾▽＾)", "开心每一天 o(〃'▽'〃)o", 
+            "记得想我 (´▽`ʃ♡ƪ)", "别累坏了 (┬┬﹏┬┬)", "注意休息 (∪｡∪)｡｡｡zzz", 
+            "记得保暖 (｡•́︿•̀｡)", "好好吃饭 (๑•̀ㅂ•́)و✧", "别熬夜了 (;´･ω･)", 
+            "多运动运动 ٩(◕‿◕｡)۶", "补充维生素 (◠‿◠✿)", "照顾好自己 (｡◕‿◕｡)", 
+            "吃早餐了吗？ (๑´ڡ`๑)", "保持好心情 (◍•ᴗ•◍)❤", "一切都会好起来的 (•̀ᴗ•́)و", 
+            "你最棒了 (☆▽☆)", "加油！٩(๑❛ᴗ❛๑)۶", "保持联系 (●ˇ∀ˇ●)", 
+            "天天开心 ヾ(✿ﾟ▽ﾟ)ノ", "要幸福哦 (◕‿◕)♡", "爱你哟 (づ￣ ³￣)づ",
+            "想抱抱你 (つˆ⌣ˆ)つ", "你是最可爱的人 (๑•́ ₃ •̀๑)", "晚安，梦里见 (´-ω-`)", 
+            "今天也要元气满满！(≧▽≦)/", "你笑起来真好看 (✿◡‿◡)", "别忘了吃药哦 (｡•́︿•̀｡)", 
+            "我一直在哦 (๑´•.̫ • `๑)", "今天也要加油鸭！(ง •̀_•́)ง", "想和你一起看星星 (✨ω✨)", 
+            "你是最亮的星 (´-ω-`)", "每天都要开心 (ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "要自信！(๑•̀ㅂ•́)✧", 
+            "你值得被爱 (｡♥‿♥｡)", "今天也要被世界温柔以待 (´▽`ʃƪ)♡", "我超喜欢你 (≧◡≦) ♡", 
+            "你是我最重要的人 (｡･ω･｡)ﾉ♡", "愿你所愿皆所得 (˶ᵔ ᵕ ᵔ˶)", "每天都想见到你 (๑•́ ₃ •̀๑)", 
+            "你是我见过最可爱的人 (づ￣ ³￣)づ", "要开心到飞起！(✿◠‿◠)", "你就是我的小太阳 (✨)", 
+            "想和你一起吃火锅 (๑•̀ㅁ•́ฅ)", "你是最棒的！(☆▽☆)", "今天也要被宠爱 (｡♥‿♥｡)", 
+            "我只想对你好 (๑´•.̫ • `๑)", "你是我最珍贵的宝藏 (˶ᵔ ᵕ ᵔ˶)", "要一直一直开心哦 (´▽`ʃƪ)♡",
+            "你就是我的全世界 (｡･ω･｡)ﾉ♡", "想和你一起看日出日落 (✨ω✨)", "你值得拥有所有美好 (｡♥‿♥｡)",
+            "每天都要被爱包围 (づ｡◕‿‿◕｡)づ", "你是最闪亮的星 (☆▽☆)", "我想一直陪着你 (๑•́ ₃ •̀๑)",
+            "你就是我的小甜心 (˶ᵔ ᵕ ᵔ˶)", "要一直一直幸福下去 (´▽`ʃƪ)♡", "你是我最温暖的港湾 (｡･ω･｡)ﾉ♡",
+            "想和你一起变老 (˶ᵔ ᵕ ᵔ˶)", "你就是我的唯一 (｡♥‿♥｡)", "每天都要被我宠上天 (づ￣ ³￣)づ",
+            "你是我最美的风景 (✨ω✨)", "要一直一直在一起 (๑•́ ₃ •̀๑)", "你就是我的小宝贝 (˶ᵔ ᵕ ᵔ˶)",
+            "想和你一起看遍世界 (´▽`ʃƪ)♡", "你是我最珍贵的礼物 (｡･ω･｡)ﾉ♡", "每天都要被幸福填满 (｡♥‿♥｡)"
         ];
-        
+
         let animationActive = false;
         let messageInterval;
         let usedTexts = new Set();
         let audioElement = null;
 
-        // 获取DOM元素
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
         const controlPanel = document.querySelector('.control-panel');
@@ -393,259 +326,238 @@
         const sendBtn = document.getElementById('sendBtn');
         const musicInfo = document.getElementById('musicInfo');
 
-        // 祝福语出现速度设置（熊猫烧香风格，快速弹出）
-        const INITIAL_DELAY = 50;
-        const CONTINUOUS_INTERVAL = 100;
-        const MAX_MESSAGES_ON_SCREEN = 50; // 优化：移动端限制为50
+        const INITIAL_DELAY = 70;
+        const CONTINUOUS_INTERVAL = 130;
+        const MAX_MESSAGES_ON_SCREEN = 60;
 
-        // 初始化背景音乐（优化版：移动端友好）
+        // 音乐初始化
         function initBackgroundMusic() {
             audioElement = new Audio("a.mp3");
             audioElement.loop = true;
-            audioElement.volume = 0.15;
+            audioElement.volume = 0.18;
 
             const playAudio = () => {
                 audioElement.play().then(() => {
-                    musicInfo.textContent = "背景音乐: a.mp3（播放中）";
-                }).catch(() => {
-                    musicInfo.textContent = "背景音乐: a.mp3（播放失败）";
-                });
-                // 移除监听器，避免重复
-                document.body.removeEventListener('click', playAudio);
-                document.body.removeEventListener('touchstart', playAudio);
+                    musicInfo.textContent = "背景音乐: a.mp3（播放中♪）";
+                }).catch(() => {});
+                ['click', 'touchstart', 'keydown'].forEach(ev => 
+                    document.body.removeEventListener(ev, playAudio)
+                );
             };
-
-            // 多种交互触发
-            document.body.addEventListener('click', playAudio);
-            document.body.addEventListener('touchstart', playAudio);
-            startBtn.addEventListener('click', playAudio);
+            ['click', 'touchstart', 'keydown'].forEach(ev => 
+                document.body.addEventListener(ev, playAudio, { once: true })
+            );
         }
 
-        // 生成随机颜色
         function getRandomColor() {
-            const colors = [
-                '#FF6B6B', '#4ECDC4', '#FF9E7D', '#6A0572', '#1A936F',
-                '#FF9F1C', '#2EC4B6', '#E71D36', '#F46036', '#5B6C5D',
-                '#9B5DE5', '#F15BB5', '#FEE440', '#00BBF9', '#00F5D4',
-                '#FF6B9D', '#A05195', '#F6AE2D', '#86BBD8', '#33658A'
-            ];
+            const colors = ['#FF6B6B', '#4ECDC4', '#FF9E7D', '#9B5DE5', '#F15BB5', '#FEE440', '#00F5D4', '#FF6B9D'];
             return colors[Math.floor(Math.random() * colors.length)];
         }
 
-        // 获取未使用的随机祝福语
         function getRandomUnusedText() {
-            if (usedTexts.size >= careTexts.length) {
-                usedTexts.clear();
-            }
-            const availableTexts = careTexts.filter(text => !usedTexts.has(text));
-            const randomText = availableTexts[Math.floor(Math.random() * availableTexts.length)];
-            usedTexts.add(randomText);
-            return randomText;
+            if (usedTexts.size >= careTexts.length) usedTexts.clear();
+            const available = careTexts.filter(t => !usedTexts.has(t));
+            const text = available[Math.floor(Math.random() * available.length)];
+            usedTexts.add(text);
+            return text;
         }
 
-        // 创建消息弹窗（优化位置计算）
+        // 关键：允许溢出屏幕
         function createMessagePopup() {
-            // 优化：检查数量
-            if (document.querySelectorAll('.message-popup').length >= MAX_MESSAGES_ON_SCREEN) {
-                return;
-            }
+            if (document.querySelectorAll('.message-popup').length >= MAX_MESSAGES_ON_SCREEN) return;
 
-            const messagePopup = document.createElement('div');
-            messagePopup.className = 'message-popup';
-            const messageText = getRandomUnusedText();
-
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = messageText;
-
-            const closeBtn = document.createElement('div');
-            closeBtn.className = 'close-btn';
-            closeBtn.innerHTML = '×';
-
-            messagePopup.appendChild(messageContent);
-            messagePopup.appendChild(closeBtn);
-
-            // 优化：安全边距
-            const safeMargin = 60;
-            const maxX = window.innerWidth - 180;
-            const maxY = window.innerHeight - 140;
-            const randomX = Math.max(safeMargin, Math.min(maxX, Math.random() * maxX));
-            const randomY = Math.max(safeMargin, Math.min(maxY, Math.random() * maxY));
-
-            messagePopup.style.left = randomX + 'px';
-            messagePopup.style.top = randomY + 'px';
-            messagePopup.style.borderLeft = `4px solid ${getRandomColor()}`;
-            messagePopup.style.animationDelay = `${Math.random() * 5}s`;
-
-            document.body.appendChild(messagePopup);
-
-            setTimeout(() => messagePopup.classList.add('show'), 100);
-
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                closeMessage(messagePopup);
-            });
-
-            messagePopup.addEventListener('click', () => closeMessage(messagePopup));
-        }
-
-        // 关闭消息弹窗
-        function closeMessage(messagePopup) {
-            messagePopup.classList.remove('show');
-            messagePopup.classList.add('fade-out');
-            setTimeout(() => messagePopup.parentNode?.removeChild(messagePopup), 500);
-        }
-
-        // 开始显示消息
-        function startMessages() {
-            if (animationActive) return;
-            animationActive = true;
-
-            for (let i = 0; i < 20; i++) {
-                setTimeout(createMessagePopup, i * INITIAL_DELAY);
-            }
-
-            messageInterval = setInterval(() => {
-                if (document.querySelectorAll('.message-popup').length < MAX_MESSAGES_ON_SCREEN) {
-                    createMessagePopup();
-                }
-            }, CONTINUOUS_INTERVAL);
-        }
-
-        // 清屏
-        function clearMessages() {
-            document.querySelectorAll('.message-popup').forEach(closeMessage);
-        }
-
-        // 发送自定义消息
-        function sendCustomMessage() {
-            const message = customMessage.value.trim();
-            if (message) {
-                careTexts.push(message);
-                createCustomMessagePopup(message);
-                customMessage.value = "";
-                showMessage("祝福语发送成功！");
-            } else {
-                showMessage("请输入祝福语！");
-            }
-        }
-
-        // 创建自定义消息弹窗
-        function createCustomMessagePopup(message) {
-            const messagePopup = document.createElement('div');
-            messagePopup.className = 'message-popup';
-
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = message;
-
-            const closeBtn = document.createElement('div');
-            closeBtn.className = 'close-btn';
-            closeBtn.innerHTML = '×';
-
-            messagePopup.appendChild(messageContent);
-            messagePopup.appendChild(closeBtn);
-
-            const safeMargin = 60;
-            const maxX = window.innerWidth - 180;
-            const maxY = window.innerHeight - 140;
-            const randomX = Math.max(safeMargin, Math.min(maxX, Math.random() * maxX));
-            const randomY = Math.max(safeMargin, Math.min(maxY, Math.random() * maxY));
-
-            messagePopup.style.left = randomX + 'px';
-            messagePopup.style.top = randomY + 'px';
-            messagePopup.style.borderLeft = '4px solid #FF6B9D';
-            messagePopup.style.background = 'rgba(255, 255, 255, 0.98)';
-
-            document.body.appendChild(messagePopup);
-            setTimeout(() => messagePopup.classList.add('show'), 100);
-
-            closeBtn.onclick = (e) => { e.stopPropagation(); closeMessage(messagePopup); };
-            messagePopup.onclick = () => closeMessage(messagePopup);
-        }
-
-        // 显示临时提示
-        function showMessage(text) {
-            const message = document.createElement('div');
-            message.className = 'message-popup';
-            message.style.background = 'rgba(255, 255, 255, 0.95)';
-            message.style.borderLeft = '4px solid #4ECDC4';
-            message.style.zIndex = '1000';
+            const popup = document.createElement('div');
+            popup.className = 'message-popup';
 
             const content = document.createElement('div');
             content.className = 'message-content';
-            content.textContent = text;
-            message.appendChild(content);
+            content.textContent = getRandomUnusedText();
 
-            message.style.left = '50%';
-            message.style.top = '50%';
-            message.style.transform = 'translate(-50%, -50%) scale(0)';
+            const close = document.createElement('div');
+            close.className = 'close-btn';
+            close.innerHTML = '×';
 
-            document.body.appendChild(message);
-            setTimeout(() => message.classList.add('show'), 100);
-            setTimeout(() => closeMessage(message), 3000);
+            popup.appendChild(content);
+            popup.appendChild(close);
+
+            // 允许溢出：-50% ~ +150% 视口范围
+            const viewportW = window.innerWidth;
+            const viewportH = window.innerHeight;
+            const popupW = 180 + Math.random() * 60;
+            const popupH = 80 + Math.random() * 40;
+
+            const left = -popupW * 0.5 + Math.random() * (viewportW + popupW);
+            const top = -popupH * 0.5 + Math.random() * (viewportH + popupH);
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.style.color = getRandomColor();
+            popup.style.animationDelay = `${Math.random() * 2}s`;
+
+            document.body.appendChild(popup);
+            setTimeout(() => popup.classList.add('show'), 50);
+
+            close.onclick = e => { e.stopPropagation(); closeMessage(popup); };
+            popup.onclick = () => closeMessage(popup);
         }
 
-        // 创建随机心形（优化：减少数量）
-        function createHeart(i) {
-            const heart = document.createElement('div');
-            heart.className = 'heart';
-            heart.innerHTML = '❤';
-            heart.style.left = Math.random() * window.innerWidth + 'px';
-            heart.style.top = Math.random() * window.innerHeight + 'px';
-            heart.style.fontSize = (Math.random() * 15 + 8) + 'px';
-            heart.style.opacity = Math.random() * 0.3 + 0.1;
-            heart.style.setProperty('--delay', `${i * 1.5}s`);
-            document.body.appendChild(heart);
+        function closeMessage(el) {
+            el.classList.remove('show');
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 500);
+        }
+
+        function startMessages() {
+            if (animationActive) return;
+            animationActive = true;
+            for (let i = 0; i < 18; i++) {
+                setTimeout(createMessagePopup, i * INITIAL_DELAY);
+            }
+            messageInterval = setInterval(createMessagePopup, CONTINUOUS_INTERVAL);
+        }
+
+        function stopMessages() {
+            clearInterval(messageInterval);
+            animationActive = false;
+        }
+
+        function clearMessages() {
+            stopMessages();
+            document.querySelectorAll('.message-popup').forEach(closeMessage);
+            startBtn.textContent = '开始入侵';
+        }
+
+        function sendCustomMessage() {
+            const msg = customMessage.value.trim();
+            if (msg) {
+                createCustomMessagePopup(msg);
+                customMessage.value = "";
+                showToast("发送成功！");
+            } else {
+                showToast("说点什么嘛～");
+            }
+        }
+
+        function createCustomMessagePopup(msg) {
+            const popup = document.createElement('div');
+            popup.className = 'message-popup';
+            popup.style.background = 'rgba(255, 182, 193, 0.98)';
+            popup.style.fontWeight = 'bold';
+
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.textContent = msg;
+
+            const close = document.createElement('div');
+            close.className = 'close-btn';
+            close.innerHTML = '×';
+
+            popup.appendChild(content);
+            popup.appendChild(close);
+
+            const left = Math.random() * (window.innerWidth * 1.5) - 100;
+            const top = Math.random() * (window.innerHeight * 1.5) - 100;
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+
+            document.body.appendChild(popup);
+            setTimeout(() => popup.classList.add('show'), 50);
+
+            close.onclick = e => { e.stopPropagation(); closeMessage(popup); };
+            popup.onclick = () => closeMessage(popup);
+        }
+
+        function showToast(text) {
+            const toast = document.createElement('div');
+            toast.textContent = text;
+            toast.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+                background: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 25px;
+                font-size: 14px; z-index: 9999; pointer-events: none;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.style.transform = 'translate(-50%, -50%) scale(1)', 50);
+            setTimeout(() => toast.remove(), 1800);
+        }
+
+        function createHeart() {
+            const h = document.createElement('div');
+            h.className = 'heart';
+            h.innerHTML = '❤';
+            h.style.left = Math.random() * window.innerWidth + 'px';
+            h.style.top = Math.random() * window.innerHeight + 'px';
+            h.style.fontSize = (12 + Math.random() * 10) + 'px';
+            h.style.animationDelay = `${Math.random() * 6}s`;
+            document.body.appendChild(h);
+        }
+
+        function createClickHeart(x, y) {
+            const h = document.createElement('div');
+            h.innerHTML = '❤';
+            h.style.position = 'fixed';
+            h.style.left = (x - 18) + 'px';
+            h.style.top = (y - 18) + 'px';
+            h.style.fontSize = '36px';
+            h.style.pointerEvents = 'none';
+            h.style.zIndex = '999';
+            h.style.animation = 'heartBurst 1s ease-out forwards';
+            document.body.appendChild(h);
+            setTimeout(() => h.remove(), 1000);
         }
 
         // 事件绑定
-        startBtn.addEventListener('click', startMessages);
+        startBtn.addEventListener('click', () => {
+            if (animationActive) {
+                stopMessages();
+                startBtn.textContent = '开始入侵';
+                showToast('已暂停');
+            } else {
+                startMessages();
+                startBtn.textContent = '暂停入侵';
+                showToast('熊猫烧香启动！');
+            }
+        });
+
         clearBtn.addEventListener('click', clearMessages);
         sendBtn.addEventListener('click', sendCustomMessage);
-        customMessage.addEventListener('keypress', (e) => {
+        customMessage.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendCustomMessage();
             }
         });
 
-        settingsBtn.addEventListener('click', (e) => {
+        settingsBtn.addEventListener('click', e => {
             e.stopPropagation();
             controlPanel.classList.toggle('show');
         });
 
-        document.addEventListener('click', (e) => {
+        document.addEventListener('click', e => {
             if (!controlPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
                 controlPanel.classList.remove('show');
             }
-        });
+            if (!e.target.closest('.message-popup') && 
+                !controlPanel.contains(e.target) && 
+                !settingsBtn.contains(e.target)) {
+                const x = e.clientX || e.touches[0].clientX;
+                const y = e.clientY || e.touches[0].clientY;
+                createClickHeart(x, y);
+            }
+        }, { passive: true });
 
-        // 初始化心形（优化：8个）
-        for (let i = 0; i < 8; i++) createHeart(i);
-
-        // 彩蛋：点击屏幕发送爱心
-        document.body.addEventListener('click', (e) => {
-            if (e.target.closest('.message-popup') || e.target.closest('.control-panel') || e.target.closest('.settings-btn')) return;
-
-            const heart = document.createElement('div');
-            heart.innerHTML = '❤';
-            heart.style.position = 'absolute';
-            heart.style.left = (e.touches?.[0]?.clientX || e.clientX) - 15 + 'px';
-            heart.style.top = (e.touches?.[0]?.clientY || e.clientY) - 15 + 'px';
-            heart.style.fontSize = '30px';
-            heart.style.pointerEvents = 'none';
-            heart.style.zIndex = '999';
-            heart.style.animation = 'heartBurst 1s ease-out forwards';
-            document.body.appendChild(heart);
-
-            setTimeout(() => heart.remove(), 1000);
-        });
-
-        // 初始化音乐 + 自动开始弹幕
+        // 初始化
         window.addEventListener('load', () => {
             initBackgroundMusic();
-            setTimeout(startMessages, 1000);
+            for (let i = 0; i < 8; i++) setTimeout(createHeart, i * 800);
+            setTimeout(() => {
+                startMessages();
+                startBtn.textContent = '暂停入侵';
+            }, 1200);
+        });
+
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('.message-popup').forEach(closeMessage);
         });
     </script>
 </body>
