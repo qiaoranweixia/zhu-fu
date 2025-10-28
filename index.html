@@ -371,8 +371,8 @@
         
         <div class="server-status">
             <h4>服务器状态</h4>
-            <div class="server-info connected" id="serverInfo">
-                服务器连接正常 - 弹幕已共享
+            <div class="server-info disconnected" id="serverInfo">
+                服务器连接失败 - 仅使用本地弹幕
             </div>
             <button id="syncServerBtn">同步服务器弹幕</button>
         </div>
@@ -529,27 +529,46 @@
 
         // 发送弹幕到服务器
         function sendMessageToServer(message) {
-            const formData = new FormData();
-            formData.append('message', message);
-            formData.append('action', 'save');
+            const params = new URLSearchParams();
+            params.append('message', message);
+            params.append('action', 'save');
             
-            fetch(SERVER_SCRIPT, {
-                method: 'POST',
-                body: formData
+            fetch(SERVER_SCRIPT + '?' + params.toString(), {
+                method: 'GET'
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    console.log('弹幕已发送到服务器');
-                    showToast('弹幕已发送到服务器，所有人可见！');
-                } else {
-                    console.error('服务器发送失败:', data.message);
-                    showToast('服务器发送失败，弹幕仅保存在本地');
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('服务器响应错误: ' + response.status);
+                }
+                return response.text();
+            })
+            .then(text => {
+                // 尝试解析JSON，如果失败则使用文本
+                try {
+                    const data = JSON.parse(text);
+                    if (data.status === 'success') {
+                        console.log('弹幕已发送到服务器');
+                        showToast('弹幕已发送到服务器，所有人可见！');
+                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
+                        serverInfo.className = 'server-info connected';
+                    } else {
+                        throw new Error(data.message || '服务器返回错误');
+                    }
+                } catch (e) {
+                    // 如果不是JSON，检查是否包含成功信息
+                    if (text.includes('success') || text.includes('成功')) {
+                        console.log('弹幕已发送到服务器');
+                        showToast('弹幕已发送到服务器，所有人可见！');
+                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
+                        serverInfo.className = 'server-info connected';
+                    } else {
+                        throw new Error('服务器返回非JSON响应: ' + text);
+                    }
                 }
             })
             .catch(error => {
                 console.error('发送到服务器失败:', error);
-                showToast('服务器连接失败，弹幕仅保存在本地');
+                showToast('服务器发送失败，弹幕仅保存在本地');
                 serverInfo.textContent = '服务器连接失败 - 仅使用本地弹幕';
                 serverInfo.className = 'server-info disconnected';
             });
@@ -557,30 +576,56 @@
 
         // 从服务器获取弹幕
         function fetchMessagesFromServer() {
-            const formData = new FormData();
-            formData.append('action', 'get');
+            const params = new URLSearchParams();
+            params.append('action', 'get');
             
-            fetch(SERVER_SCRIPT, {
-                method: 'POST',
-                body: formData
+            fetch(SERVER_SCRIPT + '?' + params.toString(), {
+                method: 'GET'
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // 将服务器弹幕添加到本地弹幕池
-                    data.messages.forEach(msg => {
-                        if (!savedMessages.includes(msg)) {
-                            savedMessages.push(msg);
-                        }
-                    });
-                    
-                    saveMessagesToStorage();
-                    renderSavedMessages();
-                    showToast(`从服务器获取了 ${data.messages.length} 条弹幕`);
-                    serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
-                    serverInfo.className = 'server-info connected';
-                } else {
-                    throw new Error(data.message);
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('服务器响应错误: ' + response.status);
+                }
+                return response.text();
+            })
+            .then(text => {
+                // 尝试解析JSON，如果失败则使用文本
+                try {
+                    const data = JSON.parse(text);
+                    if (data.status === 'success') {
+                        // 将服务器弹幕添加到本地弹幕池
+                        data.messages.forEach(msg => {
+                            if (!savedMessages.includes(msg)) {
+                                savedMessages.push(msg);
+                            }
+                        });
+                        
+                        saveMessagesToStorage();
+                        renderSavedMessages();
+                        showToast(`从服务器获取了 ${data.messages.length} 条弹幕`);
+                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
+                        serverInfo.className = 'server-info connected';
+                    } else {
+                        throw new Error(data.message || '服务器返回错误');
+                    }
+                } catch (e) {
+                    // 如果不是JSON，尝试解析文本格式
+                    const lines = text.split('\n').filter(line => line.trim());
+                    if (lines.length > 0) {
+                        lines.forEach(msg => {
+                            if (!savedMessages.includes(msg)) {
+                                savedMessages.push(msg);
+                            }
+                        });
+                        
+                        saveMessagesToStorage();
+                        renderSavedMessages();
+                        showToast(`从服务器获取了 ${lines.length} 条弹幕`);
+                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
+                        serverInfo.className = 'server-info connected';
+                    } else {
+                        throw new Error('服务器返回空响应');
+                    }
                 }
             })
             .catch(error => {
