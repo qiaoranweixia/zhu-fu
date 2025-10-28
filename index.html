@@ -288,31 +288,21 @@
             color: #ff6b6b;
         }
 
-        /* 服务器设置区域 */
-        .server-settings {
+        /* 服务器状态区域 */
+        .server-status {
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
 
-        .server-settings h4 {
+        .server-status h4 {
             margin-bottom: 8px;
             font-size: 14px;
             color: #ff6b6b;
             text-align: center;
         }
 
-        .server-settings input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 13px;
-            margin-bottom: 8px;
-            font-family: inherit;
-        }
-
-        .server-status {
+        .server-info {
             font-size: 12px;
             margin-bottom: 8px;
             text-align: center;
@@ -320,12 +310,12 @@
             border-radius: 8px;
         }
 
-        .server-status.connected {
+        .server-info.connected {
             background: rgba(46, 196, 182, 0.2);
             color: #2EC4B6;
         }
 
-        .server-status.disconnected {
+        .server-info.disconnected {
             background: rgba(255, 107, 107, 0.2);
             color: #ff6b6b;
         }
@@ -379,11 +369,11 @@
             <button id="clearSavedBtn">清空本地弹幕</button>
         </div>
         
-        <div class="server-settings">
-            <h4>服务器设置</h4>
-            <input type="text" id="serverUrl" placeholder="服务器地址 (例如: http://yourserver.com/save_danmu.php)">
-            <div class="server-status disconnected" id="serverStatus">未连接服务器</div>
-            <button id="testServerBtn">测试连接</button>
+        <div class="server-status">
+            <h4>服务器状态</h4>
+            <div class="server-info connected" id="serverInfo">
+                服务器连接正常 - 弹幕已共享
+            </div>
             <button id="syncServerBtn">同步服务器弹幕</button>
         </div>
     </div>
@@ -437,8 +427,6 @@
         let audioUnlocked = false;
         let savedMessages = []; // 存储用户保存的弹幕
         let serverMessages = []; // 存储从服务器获取的弹幕
-        let serverUrl = ''; // 服务器地址
-        let serverConnected = false; // 服务器连接状态
 
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -450,16 +438,17 @@
         const unlockAudio = document.getElementById('unlockAudio');
         const savedList = document.getElementById('savedList');
         const clearSavedBtn = document.getElementById('clearSavedBtn');
-        const serverUrlInput = document.getElementById('serverUrl');
-        const serverStatus = document.getElementById('serverStatus');
-        const testServerBtn = document.getElementById('testServerBtn');
+        const serverInfo = document.getElementById('serverInfo');
         const syncServerBtn = document.getElementById('syncServerBtn');
 
         const INITIAL_DELAY = 50;
         const CONTINUOUS_INTERVAL = 90;
         const MAX_MESSAGES_ON_SCREEN = 80;
+        
+        // 服务器脚本路径 - 与HTML在同一目录
+        const SERVER_SCRIPT = 'danmu_server.php';
 
-        // 初始化 - 从本地存储加载保存的弹幕和服务器设置
+        // 初始化 - 从本地存储加载保存的弹幕
         function loadSavedMessages() {
             const saved = localStorage.getItem('savedMessages');
             if (saved) {
@@ -467,23 +456,13 @@
                 renderSavedMessages();
             }
             
-            // 加载服务器设置
-            const savedServerUrl = localStorage.getItem('serverUrl');
-            if (savedServerUrl) {
-                serverUrl = savedServerUrl;
-                serverUrlInput.value = savedServerUrl;
-                testServerConnection();
-            }
+            // 自动从服务器获取弹幕
+            fetchMessagesFromServer();
         }
 
         // 保存弹幕到本地存储
         function saveMessagesToStorage() {
             localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
-        }
-
-        // 保存服务器设置
-        function saveServerSettings() {
-            localStorage.setItem('serverUrl', serverUrl);
         }
 
         // 渲染已保存的弹幕列表
@@ -548,94 +527,68 @@
             }
         }
 
-        // 测试服务器连接
-        function testServerConnection() {
-            if (!serverUrl) {
-                showToast('请先输入服务器地址');
-                return;
-            }
-            
-            serverStatus.textContent = '正在连接服务器...';
-            serverStatus.className = 'server-status';
-            
-            // 模拟服务器连接测试
-            setTimeout(() => {
-                // 在实际应用中，这里应该是一个真实的HTTP请求
-                // 例如: fetch(`${serverUrl}?action=test`)
-                const success = Math.random() > 0.3; // 模拟70%的成功率
-                
-                if (success) {
-                    serverConnected = true;
-                    serverStatus.textContent = '服务器连接成功';
-                    serverStatus.className = 'server-status connected';
-                    showToast('服务器连接成功！');
-                } else {
-                    serverConnected = false;
-                    serverStatus.textContent = '服务器连接失败';
-                    serverStatus.className = 'server-status disconnected';
-                    showToast('服务器连接失败，请检查地址');
-                }
-            }, 1000);
-        }
-
         // 发送弹幕到服务器
         function sendMessageToServer(message) {
-            if (!serverConnected || !serverUrl) {
-                showToast('服务器未连接，弹幕仅保存在本地');
-                return false;
-            }
+            const formData = new FormData();
+            formData.append('message', message);
+            formData.append('action', 'save');
             
-            // 模拟发送到服务器
-            // 在实际应用中，这里应该是一个真实的HTTP POST请求
-            // 例如: fetch(serverUrl, { method: 'POST', body: JSON.stringify({message}) })
-            setTimeout(() => {
-                // 模拟80%的成功率
-                if (Math.random() > 0.2) {
-                    console.log(`弹幕已发送到服务器: ${message}`);
+            fetch(SERVER_SCRIPT, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('弹幕已发送到服务器');
                     showToast('弹幕已发送到服务器，所有人可见！');
                 } else {
-                    console.log('服务器发送失败');
+                    console.error('服务器发送失败:', data.message);
                     showToast('服务器发送失败，弹幕仅保存在本地');
                 }
-            }, 500);
-            
-            return true;
+            })
+            .catch(error => {
+                console.error('发送到服务器失败:', error);
+                showToast('服务器连接失败，弹幕仅保存在本地');
+                serverInfo.textContent = '服务器连接失败 - 仅使用本地弹幕';
+                serverInfo.className = 'server-info disconnected';
+            });
         }
 
         // 从服务器获取弹幕
         function fetchMessagesFromServer() {
-            if (!serverConnected || !serverUrl) {
-                showToast('服务器未连接，无法获取共享弹幕');
-                return;
-            }
+            const formData = new FormData();
+            formData.append('action', 'get');
             
-            // 模拟从服务器获取弹幕
-            // 在实际应用中，这里应该是一个真实的HTTP GET请求
-            // 例如: fetch(`${serverUrl}?action=get`)
-            showToast('正在从服务器获取弹幕...');
-            
-            setTimeout(() => {
-                // 模拟获取到的服务器弹幕
-                const mockServerMessages = [
-                    "来自服务器的问候 ❤",
-                    "今天天气真好！(●'◡'●)",
-                    "有人一起玩游戏吗？",
-                    "这个网站好有趣！",
-                    "大家都要开心哦~",
-                    "晚安，好梦 (｡･ω･｡)ﾉ♡"
-                ];
-                
-                // 将服务器弹幕添加到本地弹幕池
-                mockServerMessages.forEach(msg => {
-                    if (!savedMessages.includes(msg)) {
-                        savedMessages.push(msg);
-                    }
-                });
-                
-                saveMessagesToStorage();
-                renderSavedMessages();
-                showToast(`从服务器获取了 ${mockServerMessages.length} 条弹幕`);
-            }, 1000);
+            fetch(SERVER_SCRIPT, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 将服务器弹幕添加到本地弹幕池
+                    data.messages.forEach(msg => {
+                        if (!savedMessages.includes(msg)) {
+                            savedMessages.push(msg);
+                        }
+                    });
+                    
+                    saveMessagesToStorage();
+                    renderSavedMessages();
+                    showToast(`从服务器获取了 ${data.messages.length} 条弹幕`);
+                    serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
+                    serverInfo.className = 'server-info connected';
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('从服务器获取弹幕失败:', error);
+                showToast('从服务器获取弹幕失败，仅使用本地弹幕');
+                serverInfo.textContent = '服务器连接失败 - 仅使用本地弹幕';
+                serverInfo.className = 'server-info disconnected';
+            });
         }
 
         // 解锁音频
@@ -767,7 +720,7 @@
                     renderSavedMessages();
                 }
                 
-                // 尝试发送到服务器
+                // 发送到服务器
                 sendMessageToServer(msg);
                 
                 customMessage.value = "";
@@ -868,15 +821,7 @@
         clearBtn.addEventListener('click', clearMessages);
         sendBtn.addEventListener('click', sendCustomMessage);
         clearSavedBtn.addEventListener('click', clearAllSavedMessages);
-        
-        // 服务器相关事件
-        testServerBtn.addEventListener('click', testServerConnection);
         syncServerBtn.addEventListener('click', fetchMessagesFromServer);
-        
-        serverUrlInput.addEventListener('input', () => {
-            serverUrl = serverUrlInput.value;
-            saveServerSettings();
-        });
         
         customMessage.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -905,7 +850,7 @@
 
         // 初始化
         window.addEventListener('load', () => {
-            // 加载保存的弹幕和服务器设置
+            // 加载保存的弹幕
             loadSavedMessages();
             
             for (let i = 0; i < 20; i++) setTimeout(createHeart, i * 400);
