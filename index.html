@@ -225,6 +225,70 @@
             text-align: center;
         }
 
+        /* 保存的弹幕列表 */
+        .saved-messages {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .saved-messages h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ff6b6b;
+            text-align: center;
+        }
+
+        .saved-list {
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.05);
+        }
+
+        .saved-item {
+            padding: 5px 8px;
+            margin: 3px 0;
+            background: white;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .saved-item-text {
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .saved-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .saved-item button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            width: auto;
+            padding: 2px 5px;
+            margin: 0;
+            border-radius: 4px;
+        }
+
+        .saved-item .send-btn {
+            color: #4ECDC4;
+        }
+
+        .saved-item .delete-btn {
+            color: #ff6b6b;
+        }
+
         /* 响应式 */
         @media (min-width: 769px) {
             .message-popup { max-width: 260px; padding: 12px 18px; }
@@ -264,6 +328,14 @@
             <h4>发送你的爱</h4>
             <textarea id="customMessage" placeholder="说点甜甜的话..."></textarea>
             <button id="sendBtn">发送</button>
+        </div>
+        
+        <div class="saved-messages">
+            <h4>已保存的弹幕</h4>
+            <div class="saved-list" id="savedList">
+                <!-- 保存的弹幕将在这里显示 -->
+            </div>
+            <button id="clearSavedBtn">清空保存的弹幕</button>
         </div>
     </div>
     
@@ -314,6 +386,7 @@
         let usedTexts = new Set();
         let audioElement = null;
         let audioUnlocked = false;
+        let savedMessages = []; // 存储用户保存的弹幕
 
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -323,10 +396,88 @@
         const sendBtn = document.getElementById('sendBtn');
         const musicInfo = document.getElementById('musicInfo');
         const unlockAudio = document.getElementById('unlockAudio');
+        const savedList = document.getElementById('savedList');
+        const clearSavedBtn = document.getElementById('clearSavedBtn');
 
         const INITIAL_DELAY = 50;
         const CONTINUOUS_INTERVAL = 90;
         const MAX_MESSAGES_ON_SCREEN = 80;
+
+        // 初始化 - 从本地存储加载保存的弹幕
+        function loadSavedMessages() {
+            const saved = localStorage.getItem('savedMessages');
+            if (saved) {
+                savedMessages = JSON.parse(saved);
+                renderSavedMessages();
+            }
+        }
+
+        // 保存弹幕到本地存储
+        function saveMessagesToStorage() {
+            localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
+        }
+
+        // 渲染已保存的弹幕列表
+        function renderSavedMessages() {
+            savedList.innerHTML = '';
+            if (savedMessages.length === 0) {
+                savedList.innerHTML = '<div style="text-align: center; color: #999; font-size: 12px; padding: 10px;">暂无保存的弹幕</div>';
+                return;
+            }
+            
+            savedMessages.forEach((message, index) => {
+                const item = document.createElement('div');
+                item.className = 'saved-item';
+                
+                const text = document.createElement('div');
+                text.className = 'saved-item-text';
+                text.textContent = message;
+                
+                const actions = document.createElement('div');
+                actions.className = 'saved-item-actions';
+                
+                const sendBtn = document.createElement('button');
+                sendBtn.className = 'send-btn';
+                sendBtn.textContent = '发送';
+                sendBtn.onclick = () => createCustomMessagePopup(message);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '删除';
+                deleteBtn.onclick = () => deleteSavedMessage(index);
+                
+                actions.appendChild(sendBtn);
+                actions.appendChild(deleteBtn);
+                
+                item.appendChild(text);
+                item.appendChild(actions);
+                
+                savedList.appendChild(item);
+            });
+        }
+
+        // 删除保存的弹幕
+        function deleteSavedMessage(index) {
+            savedMessages.splice(index, 1);
+            saveMessagesToStorage();
+            renderSavedMessages();
+            showToast('弹幕已删除');
+        }
+
+        // 清空所有保存的弹幕
+        function clearAllSavedMessages() {
+            if (savedMessages.length === 0) {
+                showToast('没有可清除的弹幕');
+                return;
+            }
+            
+            if (confirm('确定要清空所有保存的弹幕吗？')) {
+                savedMessages = [];
+                saveMessagesToStorage();
+                renderSavedMessages();
+                showToast('已清空所有弹幕');
+            }
+        }
 
         // 解锁音频
         function unlockAudioContext() {
@@ -446,6 +597,14 @@
             const msg = customMessage.value.trim();
             if (msg) {
                 createCustomMessagePopup(msg);
+                
+                // 保存弹幕到本地存储
+                if (!savedMessages.includes(msg)) {
+                    savedMessages.push(msg);
+                    saveMessagesToStorage();
+                    renderSavedMessages();
+                }
+                
                 customMessage.value = "";
                 showToast("发送成功！");
             } else {
@@ -544,6 +703,8 @@
 
         clearBtn.addEventListener('click', clearMessages);
         sendBtn.addEventListener('click', sendCustomMessage);
+        clearSavedBtn.addEventListener('click', clearAllSavedMessages);
+        
         customMessage.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -571,6 +732,9 @@
 
         // 初始化
         window.addEventListener('load', () => {
+            // 加载保存的弹幕
+            loadSavedMessages();
+            
             for (let i = 0; i < 20; i++) setTimeout(createHeart, i * 400);
             setTimeout(() => {
                 startMessages();
