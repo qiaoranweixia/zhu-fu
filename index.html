@@ -267,36 +267,36 @@
         </div>
     </div>
     
-    <div class="settings-btn">Settings</div>
+    <div class="settings-btn">⚙️</div>
 
     <!-- 静音占位音频（解锁 autoplay） -->
     <audio id="unlockAudio" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="></audio>
 
     <script>
-        // 祝福语（Heart 替换为 Heart）
+        // 祝福语（使用爱心符号）
         const careTexts = [
             "多喝热水哦～ (●'◡'●)", "记得按时吃饭呀 (￣▽￣)~", "天冷了多穿点 (｡･ω･｡)", 
-            "我想你了 (Heart ω Heart)", "早点睡，别熬夜 (～﹃～)~zZ", "记得吃水果 (★ ω ★)", 
+            "我想你了 ❤ ω ❤", "早点睡，别熬夜 (～﹃～)~zZ", "记得吃水果 (★ ω ★)", 
             "再忙也要照顾自己 (ง •_•)ง", "今天开心吗？ (◕‿◕)", "记得微笑 (^_−)☆", 
-            "对自己好一点 (づ｡◕‿‿◕｡)づ", "累了就休息 (～o￣3￣)～", "多喝水 (ﾉ◕ヮ◕)ﾉ*:･ﾟHeart",
+            "对自己好一点 (づ｡◕‿‿◕｡)づ", "累了就休息 (～o￣3￣)～", "多喝水 (ﾉ◕ヮ◕)ﾉ*:･ﾟ❤",
             "出去走走吧 ヽ(✿ﾟ▽ﾟ)ノ", "别太辛苦了 (；一_一)", "注意身体哦 (。・∀・)ノ", 
             "放松一下 (￣o￣) . z Z", "心情要美美哒 (＾▽＾)", "开心每一天 o(〃'▽'〃)o", 
-            "记得想我 (´▽`ʃHeartƪ)", "别累坏了 (┬┬﹏┬┬)", "注意休息 (∪｡∪)｡｡｡zzz", 
-            "记得保暖 (｡•́︿•̀｡)", "好好吃饭 (๑•̀ㅂ•́)وHeart", "别熬夜了 (;´･ω･)", 
+            "记得想我 (´▽`ʃ❤ƪ)", "别累坏了 (┬┬﹏┬┬)", "注意休息 (∪｡∪)｡｡｡zzz", 
+            "记得保暖 (｡•́︿•̀｡)", "好好吃饭 (๑•̀ㅂ•́)و❤", "别熬夜了 (;´･ω･)", 
             "多运动运动 ٩(◕‿◕｡)۶", "补充维生素 (◠‿◠✿)", "照顾好自己 (｡◕‿◕｡)", 
-            "吃早餐了吗？ (๑´ڡ`๑)", "保持好心情 (◍•ᴗ•◍)Heart", "一切都会好起来的 (•̀ᴗ•́)و", 
+            "吃早餐了吗？ (๑´ڡ`๑)", "保持好心情 (◍•ᴗ•◍)❤", "一切都会好起来的 (•̀ᴗ•́)و", 
             "你最棒了 (☆▽☆)", "加油！٩(๑❛ᴗ❛๑)۶", "保持联系 (●ˇ∀ˇ●)", 
-            "天天开心 ヾ(✿ﾟ▽ﾟ)ノ", "要幸福哦 (◕‿◕)Heart", "爱你哟 (づ￣ ³￣)づ",
+            "天天开心 ヾ(✿ﾟ▽ﾟ)ノ", "要幸福哦 (◕‿◕)❤", "爱你哟 (づ￣ ³￣)づ",
             "想抱抱你 (つˆ⌣ˆ)つ", "你是最可爱的人 (๑•́ ₃ •̀๑)", "晚安，梦里见 (´-ω-`)", 
             "今天也要元气满满！(≧▽≦)/", "你笑起来真好看 (✿◡‿◡)", "别忘了吃药哦 (｡•́︿•̀｡)", 
             "我一直在哦 (๑´•.̫ • `๑)", "今天也要加油鸭！(ง •̀_•́)ง", "想和你一起看星星 (✨ω✨)", 
-            "你是最亮的星 (´-ω-`)", "每天都要开心 (ﾉ◕ヮ◕)ﾉ*:･ﾟHeart", "要自信！(๑•̀ㅂ•́)Heart", 
-            "你值得被爱 (｡Heart‿Heart｡)", "今天也要被世界温柔以待 (´▽`ʃƪ)Heart", "我超喜欢你 (≧◡≦) Heart", 
-            "你是我最重要的人 (｡･ω･｡)ﾉHeart", "愿你所愿皆所得 (˶ᵔ ᵕ ᵔ˶)", "每天都想见到你 (๑•́ ₃ •̀๑)", 
+            "你是最亮的星 (´-ω-`)", "每天都要开心 (ﾉ◕ヮ◕)ﾉ*:･ﾟ❤", "要自信！(๑•̀ㅂ•́)❤", 
+            "你值得被爱 (｡❤‿❤｡)", "今天也要被世界温柔以待 (´▽`ʃƪ)❤", "我超喜欢你 (≧◡≦) ❤", 
+            "你是我最重要的人 (｡･ω･｡)ﾉ❤", "愿你所愿皆所得 (˶ᵔ ᵕ ᵔ˶)", "每天都想见到你 (๑•́ ₃ •̀๑)", 
             "你是我见过最可爱的人 (づ￣ ³￣)づ", "要开心到飞起！(✿◠‿◠)", "你就是我的小太阳 (✨)", 
-            "想和你一起吃火锅 (๑•̀ㅁ•́ฅ)", "你是最棒的！(☆▽☆)", "今天也要被宠爱 (｡Heart‿Heart｡)", 
-            "我只想对你好 (๑´•.̫ • `๑)", "你是我最珍贵的宝藏 (˶ᵔ ᵕ ᵔ˶)", "要一直一直开心哦 (´▽`ʃƪ)Heart"
-        ].map(text => text.replace(/Heart/g, 'Heart')); // 统一替换
+            "想和你一起吃火锅 (๑•̀ㅁ•́ฅ)", "你是最棒的！(☆▽☆)", "今天也要被宠爱 (｡❤‿❤｡)", 
+            "我只想对你好 (๑´•.̫ • `๑)", "你是我最珍贵的宝藏 (˶ᵔ ᵕ ᵔ˶)", "要一直一直开心哦 (´▽`ʃƪ)❤"
+        ];
 
         const cuteThemes = [
             { bg: '#FFB6C1', text: '#D4385B' }, { bg: '#A7C7E7', text: '#2A6EBB' },
@@ -491,14 +491,17 @@
                 position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
                 background: rgba(0,0,0,0.85); color: white; padding: 12px 22px; border-radius: 25px;
                 font-size: 14px; z-index: 9999; pointer-events: none; font-weight: bold;
+                transition: transform 0.3s ease;
             `;
             document.body.appendChild(toast);
             requestAnimationFrame(() => toast.style.transform = 'translate(-50%, -50%) scale(1)');
-            setTimeout(() => toast.remove(), 1800);
+            setTimeout(() => {
+                toast.style.transform = 'translate(-50%, -50%) scale(0)';
+                setTimeout(() => toast.remove(), 300);
+            }, 1500);
         }
 
-        // Heart 爱心（正确显示）
-      
+        // 爱心效果
         function createHeart() {
             const heart = document.createElement('div');
             heart.className = 'heart';
@@ -510,26 +513,23 @@
             heart.style.animationDelay = `${Math.random() * 10}s`;
             document.body.appendChild(heart);
         }
-        
-
-
 
         function createClickHeart(x, y) {
             const h = document.createElement('div');
-            h.innerHTML = 'Heart'; // 正确显示
+            h.innerHTML = '❤';
             h.style.position = 'fixed';
             h.style.left = (x - 25) + 'px';
             h.style.top = (y - 25) + 'px';
             h.style.fontSize = '48px';
             h.style.pointerEvents = 'none';
-            样式.zIndex = '999';
+            h.style.zIndex = '999';
             h.style.color = cuteThemes[Math.floor(Math.random() * cuteThemes.length)].bg;
             h.style.animation = 'heartBurst 1s ease-out forwards';
             document.body.appendChild(h);
             setTimeout(() => h.remove(), 1000);
         }
 
-        // 事件
+        // 事件监听器
         startBtn.addEventListener('click', () => {
             if (animationActive) {
                 stopMessages();
