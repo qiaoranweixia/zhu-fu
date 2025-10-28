@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>熊猫烧香 · Heart 满屏铺满版</title>
+    <title>熊猫烧香 · Heart 满屏铺满版增强版</title>
     <style>
         *, *::before, *::after {
             margin: 0;
@@ -101,12 +101,10 @@
             box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(12px);
             width: calc(100vw - 40px);
-            max-width: 340px;
+            max-width: 380px;
             transition: all 0.3s ease;
             opacity: 0;
             pointer-events: none;
-            max-height: 80vh;
-            overflow-y: auto;
         }
 
         .control-panel.show {
@@ -227,6 +225,42 @@
             text-align: center;
         }
 
+        /* 文件选择区域 */
+        .file-selectors {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .file-selectors h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ff6b6b;
+            text-align: center;
+        }
+
+        .file-selectors button {
+            background: #9B59B6;
+            margin-bottom: 5px;
+        }
+
+        .file-selectors button:hover,
+        .file-selectors button:active {
+            background: #8E44AD;
+        }
+
+        .file-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* 隐藏的文件输入 */
+        .file-input {
+            display: none;
+        }
+
         /* 保存的弹幕列表 */
         .saved-messages {
             margin-top: 10px;
@@ -291,67 +325,12 @@
             color: #ff6b6b;
         }
 
-        /* 文件选择区域 */
-        .file-upload-section {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .file-upload-section h4 {
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #ff6b6b;
-            text-align: center;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            margin-bottom: 8px;
-        }
-
-        .file-input-wrapper input[type="file"] {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-            z-index: 2;
-        }
-
-        .file-input-label {
-            display: block;
-            background: #4ECDC4;
-            color: white;
-            padding: 9px 11px;
-            border-radius: 22px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .file-input-label:hover,
-        .file-input-label:active {
-            background: #2EC4B6;
-            transform: translateY(-1px);
-        }
-
-        .file-info {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-            text-align: center;
-            word-break: break-all;
-        }
-
         /* 响应式 */
         @media (min-width: 769px) {
             .message-popup { max-width: 260px; padding: 12px 18px; }
             .message-content { font-size: 15px !important; }
             .close-btn { width: 20px; height: 20px; font-size: 16px; }
-            .control-panel { max-width: 360px; }
+            .control-panel { max-width: 400px; }
         }
 
         @media (max-width: 768px) {
@@ -381,22 +360,13 @@
         
         <div class="music-info" id="musicInfo">背景音乐加载中...</div>
         
-        <div class="file-upload-section">
-            <h4>选择本地音乐</h4>
-            <div class="file-input-wrapper">
-                <input type="file" id="musicFile" accept="audio/mp3,audio/*">
-                <label class="file-input-label" for="musicFile">选择 MP3 文件</label>
-            </div>
-            <div class="file-info" id="musicFileInfo">未选择文件</div>
-        </div>
-        
-        <div class="file-upload-section">
-            <h4>选择本地弹幕</h4>
-            <div class="file-input-wrapper">
-                <input type="file" id="danmakuFile" accept=".txt,text/plain">
-                <label class="file-input-label" for="danmakuFile">选择 TXT 文件</label>
-            </div>
-            <div class="file-info" id="danmakuFileInfo">未选择文件</div>
+        <div class="file-selectors">
+            <h4>选择文件</h4>
+            <button id="selectMusicBtn">选择音乐文件 (.mp3)</button>
+            <button id="selectDanmakuBtn">选择弹幕文件 (.txt)</button>
+            <div class="file-info" id="fileInfo">当前文件: 默认</div>
+            <input type="file" id="musicFile" class="file-input" accept=".mp3">
+            <input type="file" id="danmakuFile" class="file-input" accept=".txt">
         </div>
         
         <div class="send-message">
@@ -421,7 +391,7 @@
 
     <script>
         // 祝福语（使用爱心符号）
-        const careTexts = [
+        const defaultTexts = [
             "多喝热水哦～ (●'◡'●)", "记得按时吃饭呀 (￣▽￣)~", "天冷了多穿点 (｡･ω･｡)", 
             "我想你了 ❤ ω ❤", "早点睡，别熬夜 (～﹃～)~zZ", "记得吃水果 (★ ω ★)", 
             "再忙也要照顾自己 (ง •_•)ง", "今天开心吗？ (◕‿◕)", "记得微笑 (^_−)☆", 
@@ -445,6 +415,8 @@
             "我只想对你好 (๑´•.̫ • `๑)", "你是我最珍贵的宝藏 (˶ᵔ ᵕ ᵔ˶)", "要一直一直开心哦 (´▽`ʃƪ)❤"
         ];
 
+        let careTexts = [...defaultTexts];
+
         const cuteThemes = [
             { bg: '#FFB6C1', text: '#D4385B' }, { bg: '#A7C7E7', text: '#2A6EBB' },
             { bg: '#B5EAD7', text: '#2A9D8F' }, { bg: '#FFD3B6', text: '#E67E22' },
@@ -462,8 +434,6 @@
         let audioElement = null;
         let audioUnlocked = false;
         let savedMessages = []; // 存储用户保存的弹幕
-        let currentMusicFile = null;
-        let customDanmaku = []; // 用户导入的弹幕
 
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -472,13 +442,14 @@
         const customMessage = document.getElementById('customMessage');
         const sendBtn = document.getElementById('sendBtn');
         const musicInfo = document.getElementById('musicInfo');
+        const fileInfo = document.getElementById('fileInfo');
         const unlockAudio = document.getElementById('unlockAudio');
         const savedList = document.getElementById('savedList');
         const clearSavedBtn = document.getElementById('clearSavedBtn');
+        const selectMusicBtn = document.getElementById('selectMusicBtn');
+        const selectDanmakuBtn = document.getElementById('selectDanmakuBtn');
         const musicFileInput = document.getElementById('musicFile');
         const danmakuFileInput = document.getElementById('danmakuFile');
-        const musicFileInfo = document.getElementById('musicFileInfo');
-        const danmakuFileInfo = document.getElementById('danmakuFileInfo');
 
         const INITIAL_DELAY = 50;
         const CONTINUOUS_INTERVAL = 90;
@@ -571,20 +542,82 @@
 
         function initBackgroundMusic() {
             if (!audioUnlocked) return;
-            if (currentMusicFile) {
-                // 使用用户选择的音乐文件
-                audioElement = new Audio(currentMusicFile);
-            } else {
-                // 使用默认音乐
-                audioElement = new Audio("a.mp3");
-            }
+            
+            // 尝试加载默认音乐文件
+            audioElement = new Audio("a.mp3");
             audioElement.loop = true;
             audioElement.volume = 0.2;
-            audioElement.play().then(() => {
-                musicInfo.textContent = "背景音乐: " + (currentMusicFile ? "用户上传" : "a.mp3") + "（播放中）";
-            }).catch(() => {
-                musicInfo.textContent = "背景音乐: " + (currentMusicFile ? "用户上传" : "a.mp3") + "（已加载）";
+            
+            // 检查文件是否存在
+            audioElement.addEventListener('error', function() {
+                musicInfo.textContent = "背景音乐: 默认音乐文件不存在";
+                fileInfo.textContent = "当前文件: 默认 (a.mp3 不存在)";
             });
+            
+            audioElement.play().then(() => {
+                musicInfo.textContent = "背景音乐: a.mp3（播放中）";
+                fileInfo.textContent = "当前文件: a.mp3";
+            }).catch(() => {
+                musicInfo.textContent = "背景音乐: a.mp3（已加载）";
+                fileInfo.textContent = "当前文件: a.mp3";
+            });
+        }
+
+        // 加载用户选择的音乐文件
+        function loadSelectedMusic(file) {
+            if (!audioUnlocked) return;
+            
+            if (audioElement) {
+                audioElement.pause();
+                audioElement = null;
+            }
+            
+            const url = URL.createObjectURL(file);
+            audioElement = new Audio(url);
+            audioElement.loop = true;
+            audioElement.volume = 0.2;
+            
+            audioElement.play().then(() => {
+                musicInfo.textContent = `背景音乐: ${file.name}（播放中）`;
+                fileInfo.textContent = `当前文件: ${file.name}`;
+                showToast(`已加载音乐: ${file.name}`);
+            }).catch(e => {
+                musicInfo.textContent = `背景音乐: ${file.name}（已加载）`;
+                fileInfo.textContent = `当前文件: ${file.name}`;
+                showToast(`已加载音乐: ${file.name}`);
+            });
+        }
+
+        // 加载用户选择的弹幕文件
+        function loadSelectedDanmaku(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const content = e.target.result;
+                // 按行分割并过滤空行
+                const lines = content.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+                
+                if (lines.length > 0) {
+                    careTexts = [...defaultTexts, ...lines];
+                    usedTexts.clear(); // 重置已使用的文本
+                    showToast(`已加载 ${lines.length} 条弹幕`);
+                    fileInfo.textContent = `当前文件: ${file.name} (${lines.length} 条)`;
+                } else {
+                    showToast('弹幕文件为空，使用默认弹幕');
+                    careTexts = [...defaultTexts];
+                    fileInfo.textContent = "当前文件: 默认";
+                }
+            };
+            
+            reader.onerror = function() {
+                showToast('弹幕文件读取失败，使用默认弹幕');
+                careTexts = [...defaultTexts];
+                fileInfo.textContent = "当前文件: 默认";
+            };
+            
+            reader.readAsText(file);
         }
 
         ['click', 'touchstart', 'keydown'].forEach(ev => {
@@ -596,13 +629,6 @@
         }
 
         function getRandomUnusedText() {
-            // 优先使用自定义弹幕
-            if (customDanmaku.length > 0) {
-                const customIndex = Math.floor(Math.random() * customDanmaku.length);
-                return customDanmaku[customIndex];
-            }
-            
-            // 如果没有自定义弹幕，使用默认弹幕
             if (usedTexts.size >= careTexts.length) usedTexts.clear();
             const available = careTexts.filter(t => !usedTexts.has(t));
             const text = available[Math.floor(Math.random() * available.length)];
@@ -782,66 +808,6 @@
             setTimeout(() => h.remove(), 1000);
         }
 
-        // 处理音乐文件选择
-        function handleMusicFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (!file.type.startsWith('audio/')) {
-                showToast('请选择音频文件');
-                return;
-            }
-            
-            const fileURL = URL.createObjectURL(file);
-            currentMusicFile = fileURL;
-            musicFileInfo.textContent = `已选择: ${file.name}`;
-            
-            // 如果已经解锁音频，立即切换音乐
-            if (audioUnlocked) {
-                if (audioElement) {
-                    audioElement.pause();
-                }
-                initBackgroundMusic();
-            }
-            
-            showToast('音乐文件已加载');
-        }
-
-        // 处理弹幕文件选择
-        function handleDanmakuFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            if (!file.name.endsWith('.txt') && file.type !== 'text/plain') {
-                showToast('请选择TXT文件');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                // 按行分割并过滤空行
-                const lines = content.split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0);
-                
-                if (lines.length === 0) {
-                    showToast('文件为空或格式不正确');
-                    return;
-                }
-                
-                customDanmaku = lines;
-                danmakuFileInfo.textContent = `已选择: ${file.name} (${lines.length}条弹幕)`;
-                showToast(`已加载 ${lines.length} 条弹幕`);
-            };
-            
-            reader.onerror = function() {
-                showToast('文件读取失败');
-            };
-            
-            reader.readAsText(file);
-        }
-
         // 事件监听器
         startBtn.addEventListener('click', () => {
             if (animationActive) {
@@ -859,6 +825,34 @@
         sendBtn.addEventListener('click', sendCustomMessage);
         clearSavedBtn.addEventListener('click', clearAllSavedMessages);
         
+        // 文件选择事件
+        selectMusicBtn.addEventListener('click', () => musicFileInput.click());
+        selectDanmakuBtn.addEventListener('click', () => danmakuFileInput.click());
+        
+        musicFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // 检查文件类型
+                if (!file.type.startsWith('audio/') && !file.name.toLowerCase().endsWith('.mp3')) {
+                    showToast('请选择有效的MP3文件');
+                    return;
+                }
+                loadSelectedMusic(file);
+            }
+        });
+        
+        danmakuFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // 检查文件类型
+                if (!file.type.startsWith('text/') && !file.name.toLowerCase().endsWith('.txt')) {
+                    showToast('请选择有效的TXT文件');
+                    return;
+                }
+                loadSelectedDanmaku(file);
+            }
+        });
+
         customMessage.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -870,10 +864,6 @@
             e.stopPropagation();
             controlPanel.classList.toggle('show');
         });
-
-        // 文件选择事件
-        musicFileInput.addEventListener('change', handleMusicFileSelect);
-        danmakuFileInput.addEventListener('change', handleDanmakuFileSelect);
 
         document.addEventListener('click', e => {
             if (!controlPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
