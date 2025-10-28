@@ -20,6 +20,9 @@ $filename = 'danmu.txt';
 $action = $_REQUEST['action'] ?? '';
 $message = $_REQUEST['message'] ?? '';
 
+// 记录请求日志（用于调试）
+file_put_contents('debug.log', date('Y-m-d H:i:s') . " - Action: $action, Message: $message\n", FILE_APPEND);
+
 // 处理不同操作
 if ($action === 'save') {
     // 保存弹幕
@@ -27,10 +30,27 @@ if ($action === 'save') {
         $timestamp = date('Y-m-d H:i:s');
         $data = $timestamp . ' | ' . htmlspecialchars($message) . PHP_EOL;
         
+        // 检查文件是否可写，如果不可写则尝试创建
+        if (!file_exists($filename)) {
+            // 尝试创建文件
+            $file = fopen($filename, 'w');
+            if ($file) {
+                fclose($file);
+                file_put_contents('debug.log', "创建文件: $filename\n", FILE_APPEND);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => '无法创建弹幕文件']);
+                exit();
+            }
+        }
+        
+        // 尝试写入文件
         if (file_put_contents($filename, $data, FILE_APPEND | LOCK_EX)) {
             echo json_encode(['status' => 'success', 'message' => '弹幕保存成功']);
         } else {
-            echo json_encode(['status' => 'error', 'message' => '弹幕保存失败']);
+            // 记录错误信息
+            $error = error_get_last();
+            file_put_contents('debug.log', "写入失败: " . ($error['message'] ?? '未知错误') . "\n", FILE_APPEND);
+            echo json_encode(['status' => 'error', 'message' => '弹幕保存失败: ' . ($error['message'] ?? '未知错误')]);
         }
     } else {
         echo json_encode(['status' => 'error', 'message' => '弹幕内容为空']);
@@ -50,6 +70,7 @@ if ($action === 'save') {
         
         echo json_encode(['status' => 'success', 'messages' => $messages]);
     } else {
+        // 如果文件不存在，返回空数组
         echo json_encode(['status' => 'success', 'messages' => []]);
     }
 } else {
