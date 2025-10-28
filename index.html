@@ -2,11 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 禁止缩放，避免手机白边 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>熊猫烧香 · 双端完美入侵</title>
+    <title>熊猫烧香 · Heart 满屏铺满版</title>
     <style>
-        /* ===== 全局重置：无边距、无滚动条、全屏覆盖 ===== */
         *, *::before, *::after {
             margin: 0;
             padding: 0;
@@ -27,7 +25,6 @@
             touch-action: pan-y pan-x;
         }
 
-        /* ===== 弹窗：fixed + 溢出 + 可爱配色 ===== */
         .message-popup {
             position: fixed !important;
             padding: 10px 16px;
@@ -91,7 +88,6 @@
             transform: scale(1.15);
         }
 
-        /* ===== 控制面板：响应式居中 ===== */
         .control-panel {
             position: fixed;
             top: 10px;
@@ -169,15 +165,17 @@
             background: #ff9e7d;
         }
 
-        /* ===== 爱心：回归 Heart ===== */
+        /* Heart 漂浮爱心 */
         .heart {
             position: fixed;
-            font-size: 16px;
-            opacity: 0.6;
+            font-size: 18px;
+            opacity: 0.7;
             z-index: 0;
             pointer-events: none;
             animation: floatHeart 10s infinite ease-out;
             user-select: none;
+            /* 强制使用系统字体支持 Heart */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         @keyframes floatHeart {
@@ -227,7 +225,7 @@
             text-align: center;
         }
 
-        /* ===== 响应式：电脑 + 手机双适配 ===== */
+        /* 响应式 */
         @media (min-width: 769px) {
             .message-popup { max-width: 260px; padding: 12px 18px; }
             .message-content { font-size: 15px !important; }
@@ -256,11 +254,11 @@
 </head>
 <body>
     <div class="control-panel">
-        <h3>熊猫烧香祝福机</h3>
+        <h3>熊猫烧香 · 满屏 Heart</h3>
         <button id="startBtn">开始入侵</button>
         <button id="clearBtn">紧急清屏</button>
         
-        <div class="music-info" id="musicInfo">背景音乐: a.mp3（点击播放）</div>
+        <div class="music-info" id="musicInfo">背景音乐加载中...</div>
         
         <div class="send-message">
             <h4>发送你的爱</h4>
@@ -271,8 +269,11 @@
     
     <div class="settings-btn">Settings</div>
 
+    <!-- 静音占位音频（解锁 autoplay） -->
+    <audio id="unlockAudio" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="></audio>
+
     <script>
-        // 120+ 条祝福语
+        // 祝福语（Heart 替换为 Heart）
         const careTexts = [
             "多喝热水哦～ (●'◡'●)", "记得按时吃饭呀 (￣▽￣)~", "天冷了多穿点 (｡･ω･｡)", 
             "我想你了 (Heart ω Heart)", "早点睡，别熬夜 (～﹃～)~zZ", "记得吃水果 (★ ω ★)", 
@@ -295,9 +296,8 @@
             "你是我见过最可爱的人 (づ￣ ³￣)づ", "要开心到飞起！(✿◠‿◠)", "你就是我的小太阳 (✨)", 
             "想和你一起吃火锅 (๑•̀ㅁ•́ฅ)", "你是最棒的！(☆▽☆)", "今天也要被宠爱 (｡Heart‿Heart｡)", 
             "我只想对你好 (๑´•.̫ • `๑)", "你是我最珍贵的宝藏 (˶ᵔ ᵕ ᵔ˶)", "要一直一直开心哦 (´▽`ʃƪ)Heart"
-        ];
+        ].map(text => text.replace(/Heart/g, 'Heart')); // 统一替换
 
-        // 15 种可爱配色
         const cuteThemes = [
             { bg: '#FFB6C1', text: '#D4385B' }, { bg: '#A7C7E7', text: '#2A6EBB' },
             { bg: '#B5EAD7', text: '#2A9D8F' }, { bg: '#FFD3B6', text: '#E67E22' },
@@ -313,6 +313,7 @@
         let messageInterval;
         let usedTexts = new Set();
         let audioElement = null;
+        let audioUnlocked = false;
 
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -321,28 +322,36 @@
         const customMessage = document.getElementById('customMessage');
         const sendBtn = document.getElementById('sendBtn');
         const musicInfo = document.getElementById('musicInfo');
+        const unlockAudio = document.getElementById('unlockAudio');
 
-        const INITIAL_DELAY = 70;
-        const CONTINUOUS_INTERVAL = 130;
-        const MAX_MESSAGES_ON_SCREEN = 60;
+        const INITIAL_DELAY = 50;
+        const CONTINUOUS_INTERVAL = 90;
+        const MAX_MESSAGES_ON_SCREEN = 80;
 
-        // 音乐
+        // 解锁音频
+        function unlockAudioContext() {
+            if (audioUnlocked) return;
+            unlockAudio.play().then(() => {
+                audioUnlocked = true;
+                initBackgroundMusic();
+            }).catch(() => {});
+        }
+
         function initBackgroundMusic() {
+            if (!audioUnlocked) return;
             audioElement = new Audio("a.mp3");
             audioElement.loop = true;
-            audioElement.volume = 0.18;
-
-            const play = () => {
-                audioElement.play().catch(() => {});
+            audioElement.volume = 0.2;
+            audioElement.play().then(() => {
                 musicInfo.textContent = "背景音乐: a.mp3（播放中）";
-                ['click', 'touchstart'].forEach(ev => 
-                    document.removeEventListener(ev, play)
-                );
-            };
-            ['click', 'touchstart'].forEach(ev => 
-                document.addEventListener(ev, play, { once: true })
-            );
+            }).catch(() => {
+                musicInfo.textContent = "背景音乐: a.mp3（已加载）";
+            });
         }
+
+        ['click', 'touchstart', 'keydown'].forEach(ev => {
+            document.body.addEventListener(ev, unlockAudioContext, { once: true, passive: true });
+        });
 
         function getRandomTheme() {
             return cuteThemes[Math.floor(Math.random() * cuteThemes.length)];
@@ -356,7 +365,7 @@
             return text;
         }
 
-        // 创建弹窗（真正溢出）
+        // 满屏均匀分布 + 边缘入侵
         function createMessagePopup() {
             if (document.querySelectorAll('.message-popup').length >= MAX_MESSAGES_ON_SCREEN) return;
 
@@ -379,11 +388,23 @@
 
             const vw = window.innerWidth;
             const vh = window.innerHeight;
-            const w = 180 + Math.random() * 80;
-            const h = 80 + Math.random() * 50;
 
-            const left = -w * 0.8 + Math.random() * (vw + w * 1.6);
-            const top = -h * 0.8 + Math.random() * (vh + h * 1.6);
+            // 80% 均匀分布全屏，20% 边缘入侵
+            const isEdge = Math.random() < 0.2;
+            let left, top;
+
+            if (isEdge) {
+                const side = Math.floor(Math.random() * 4);
+                const offset = -120 + Math.random() * 240;
+                if (side === 0) { left = -120 + offset; top = Math.random() * vh; }
+                else if (side === 1) { left = vw + offset; top = Math.random() * vh; }
+                else if (side === 2) { left = Math.random() * vw; top = -120 + offset; }
+                else { left = Math.random() * vw; top = vh + offset; }
+            } else {
+                // 均匀分布全屏
+                left = Math.random() * vw;
+                top = Math.random() * vh;
+            }
 
             popup.style.left = left + 'px';
             popup.style.top = top + 'px';
@@ -404,7 +425,7 @@
         function startMessages() {
             if (animationActive) return;
             animationActive = true;
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 30; i++) {
                 setTimeout(createMessagePopup, i * INITIAL_DELAY);
             }
             messageInterval = setInterval(createMessagePopup, CONTINUOUS_INTERVAL);
@@ -450,8 +471,8 @@
             popup.appendChild(content);
             popup.appendChild(close);
 
-            const left = Math.random() * (window.innerWidth * 2) - window.innerWidth * 0.5;
-            const top = Math.random() * (window.innerHeight * 2) - window.innerHeight * 0.5;
+            const left = Math.random() * window.innerWidth;
+            const top = Math.random() * window.innerHeight;
 
             popup.style.left = left + 'px';
             popup.style.top = top + 'px';
@@ -476,14 +497,14 @@
             setTimeout(() => toast.remove(), 1800);
         }
 
-        // 爱心回归 Heart
+        // Heart 爱心（正确显示）
         function createHeart() {
             const h = document.createElement('div');
             h.className = 'heart';
-            h.innerHTML = 'Heart';  // 修复：Heart
+            h.innerHTML = 'Heart'; // 正确显示红心
             h.style.left = Math.random() * window.innerWidth + 'px';
             h.style.top = Math.random() * window.innerHeight + 'px';
-            h.style.fontSize = (12 + Math.random() * 12) + 'px';
+            h.style.fontSize = (16 + Math.random() * 16) + 'px';
             h.style.color = cuteThemes[Math.floor(Math.random() * cuteThemes.length)].bg;
             h.style.animationDelay = `${Math.random() * 6}s`;
             document.body.appendChild(h);
@@ -491,13 +512,13 @@
 
         function createClickHeart(x, y) {
             const h = document.createElement('div');
-            h.innerHTML = 'Heart';  // 修复：Heart
+            h.innerHTML = 'Heart'; // 正确显示
             h.style.position = 'fixed';
-            h.style.left = (x - 20) + 'px';
-            h.style.top = (y - 20) + 'px';
-            h.style.fontSize = '40px';
+            h.style.left = (x - 25) + 'px';
+            h.style.top = (y - 25) + 'px';
+            h.style.fontSize = '48px';
             h.style.pointerEvents = 'none';
-            h.style.zIndex = '999';
+            样式.zIndex = '999';
             h.style.color = cuteThemes[Math.floor(Math.random() * cuteThemes.length)].bg;
             h.style.animation = 'heartBurst 1s ease-out forwards';
             document.body.appendChild(h);
@@ -546,15 +567,13 @@
 
         // 初始化
         window.addEventListener('load', () => {
-            initBackgroundMusic();
-            for (let i = 0; i < 12; i++) setTimeout(createHeart, i * 600);
+            for (let i = 0; i < 20; i++) setTimeout(createHeart, i * 400);
             setTimeout(() => {
                 startMessages();
                 startBtn.textContent = '暂停入侵';
-            }, 1000);
+            }, 600);
         });
 
-        // 窗口变化时清除弹窗
         window.addEventListener('resize', () => {
             document.querySelectorAll('.message-popup').forEach(closeMessage);
         });
