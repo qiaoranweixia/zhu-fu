@@ -1,15 +1,24 @@
 <?php
 // danmu_server.php - 弹幕服务器端处理脚本
 
-header('Access-Control-Allow-Origin: *');
+// 设置响应头
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// 处理预检请求
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 // 弹幕存储文件
 $filename = 'danmu.txt';
 
-// 获取POST数据
-$action = $_POST['action'] ?? '';
-$message = $_POST['message'] ?? '';
+// 获取参数（支持GET和POST）
+$action = $_REQUEST['action'] ?? '';
+$message = $_REQUEST['message'] ?? '';
 
 // 处理不同操作
 if ($action === 'save') {
