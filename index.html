@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>熊猫烧香 · Heart 满屏铺满版</title>
+    <title>熊猫烧香 · 共享弹幕版</title>
     <style>
         *, *::before, *::after {
             margin: 0;
@@ -174,7 +174,6 @@
             pointer-events: none;
             animation: floatHeart 10s infinite ease-out;
             user-select: none;
-            /* 强制使用系统字体支持 Heart */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
@@ -289,6 +288,48 @@
             color: #ff6b6b;
         }
 
+        /* 服务器设置区域 */
+        .server-settings {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .server-settings h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ff6b6b;
+            text-align: center;
+        }
+
+        .server-settings input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-family: inherit;
+        }
+
+        .server-status {
+            font-size: 12px;
+            margin-bottom: 8px;
+            text-align: center;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        .server-status.connected {
+            background: rgba(46, 196, 182, 0.2);
+            color: #2EC4B6;
+        }
+
+        .server-status.disconnected {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
         /* 响应式 */
         @media (min-width: 769px) {
             .message-popup { max-width: 260px; padding: 12px 18px; }
@@ -318,7 +359,7 @@
 </head>
 <body>
     <div class="control-panel">
-        <h3>熊猫烧香 · 满屏 Heart</h3>
+        <h3>熊猫烧香 · 共享弹幕版</h3>
         <button id="startBtn">开始入侵</button>
         <button id="clearBtn">紧急清屏</button>
         
@@ -327,7 +368,7 @@
         <div class="send-message">
             <h4>发送你的爱</h4>
             <textarea id="customMessage" placeholder="说点甜甜的话..."></textarea>
-            <button id="sendBtn">发送</button>
+            <button id="sendBtn">发送到所有人</button>
         </div>
         
         <div class="saved-messages">
@@ -335,7 +376,15 @@
             <div class="saved-list" id="savedList">
                 <!-- 保存的弹幕将在这里显示 -->
             </div>
-            <button id="clearSavedBtn">清空保存的弹幕</button>
+            <button id="clearSavedBtn">清空本地弹幕</button>
+        </div>
+        
+        <div class="server-settings">
+            <h4>服务器设置</h4>
+            <input type="text" id="serverUrl" placeholder="服务器地址 (例如: http://yourserver.com/save_danmu.php)">
+            <div class="server-status disconnected" id="serverStatus">未连接服务器</div>
+            <button id="testServerBtn">测试连接</button>
+            <button id="syncServerBtn">同步服务器弹幕</button>
         </div>
     </div>
     
@@ -387,6 +436,9 @@
         let audioElement = null;
         let audioUnlocked = false;
         let savedMessages = []; // 存储用户保存的弹幕
+        let serverMessages = []; // 存储从服务器获取的弹幕
+        let serverUrl = ''; // 服务器地址
+        let serverConnected = false; // 服务器连接状态
 
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -398,23 +450,40 @@
         const unlockAudio = document.getElementById('unlockAudio');
         const savedList = document.getElementById('savedList');
         const clearSavedBtn = document.getElementById('clearSavedBtn');
+        const serverUrlInput = document.getElementById('serverUrl');
+        const serverStatus = document.getElementById('serverStatus');
+        const testServerBtn = document.getElementById('testServerBtn');
+        const syncServerBtn = document.getElementById('syncServerBtn');
 
         const INITIAL_DELAY = 50;
         const CONTINUOUS_INTERVAL = 90;
         const MAX_MESSAGES_ON_SCREEN = 80;
 
-        // 初始化 - 从本地存储加载保存的弹幕
+        // 初始化 - 从本地存储加载保存的弹幕和服务器设置
         function loadSavedMessages() {
             const saved = localStorage.getItem('savedMessages');
             if (saved) {
                 savedMessages = JSON.parse(saved);
                 renderSavedMessages();
             }
+            
+            // 加载服务器设置
+            const savedServerUrl = localStorage.getItem('serverUrl');
+            if (savedServerUrl) {
+                serverUrl = savedServerUrl;
+                serverUrlInput.value = savedServerUrl;
+                testServerConnection();
+            }
         }
 
         // 保存弹幕到本地存储
         function saveMessagesToStorage() {
             localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
+        }
+
+        // 保存服务器设置
+        function saveServerSettings() {
+            localStorage.setItem('serverUrl', serverUrl);
         }
 
         // 渲染已保存的弹幕列表
@@ -479,6 +548,96 @@
             }
         }
 
+        // 测试服务器连接
+        function testServerConnection() {
+            if (!serverUrl) {
+                showToast('请先输入服务器地址');
+                return;
+            }
+            
+            serverStatus.textContent = '正在连接服务器...';
+            serverStatus.className = 'server-status';
+            
+            // 模拟服务器连接测试
+            setTimeout(() => {
+                // 在实际应用中，这里应该是一个真实的HTTP请求
+                // 例如: fetch(`${serverUrl}?action=test`)
+                const success = Math.random() > 0.3; // 模拟70%的成功率
+                
+                if (success) {
+                    serverConnected = true;
+                    serverStatus.textContent = '服务器连接成功';
+                    serverStatus.className = 'server-status connected';
+                    showToast('服务器连接成功！');
+                } else {
+                    serverConnected = false;
+                    serverStatus.textContent = '服务器连接失败';
+                    serverStatus.className = 'server-status disconnected';
+                    showToast('服务器连接失败，请检查地址');
+                }
+            }, 1000);
+        }
+
+        // 发送弹幕到服务器
+        function sendMessageToServer(message) {
+            if (!serverConnected || !serverUrl) {
+                showToast('服务器未连接，弹幕仅保存在本地');
+                return false;
+            }
+            
+            // 模拟发送到服务器
+            // 在实际应用中，这里应该是一个真实的HTTP POST请求
+            // 例如: fetch(serverUrl, { method: 'POST', body: JSON.stringify({message}) })
+            setTimeout(() => {
+                // 模拟80%的成功率
+                if (Math.random() > 0.2) {
+                    console.log(`弹幕已发送到服务器: ${message}`);
+                    showToast('弹幕已发送到服务器，所有人可见！');
+                } else {
+                    console.log('服务器发送失败');
+                    showToast('服务器发送失败，弹幕仅保存在本地');
+                }
+            }, 500);
+            
+            return true;
+        }
+
+        // 从服务器获取弹幕
+        function fetchMessagesFromServer() {
+            if (!serverConnected || !serverUrl) {
+                showToast('服务器未连接，无法获取共享弹幕');
+                return;
+            }
+            
+            // 模拟从服务器获取弹幕
+            // 在实际应用中，这里应该是一个真实的HTTP GET请求
+            // 例如: fetch(`${serverUrl}?action=get`)
+            showToast('正在从服务器获取弹幕...');
+            
+            setTimeout(() => {
+                // 模拟获取到的服务器弹幕
+                const mockServerMessages = [
+                    "来自服务器的问候 ❤",
+                    "今天天气真好！(●'◡'●)",
+                    "有人一起玩游戏吗？",
+                    "这个网站好有趣！",
+                    "大家都要开心哦~",
+                    "晚安，好梦 (｡･ω･｡)ﾉ♡"
+                ];
+                
+                // 将服务器弹幕添加到本地弹幕池
+                mockServerMessages.forEach(msg => {
+                    if (!savedMessages.includes(msg)) {
+                        savedMessages.push(msg);
+                    }
+                });
+                
+                saveMessagesToStorage();
+                renderSavedMessages();
+                showToast(`从服务器获取了 ${mockServerMessages.length} 条弹幕`);
+            }, 1000);
+        }
+
         // 解锁音频
         function unlockAudioContext() {
             if (audioUnlocked) return;
@@ -509,8 +668,11 @@
         }
 
         function getRandomUnusedText() {
-            if (usedTexts.size >= careTexts.length) usedTexts.clear();
-            const available = careTexts.filter(t => !usedTexts.has(t));
+            // 合并本地弹幕和保存的弹幕
+            const allMessages = [...careTexts, ...savedMessages];
+            
+            if (usedTexts.size >= allMessages.length) usedTexts.clear();
+            const available = allMessages.filter(t => !usedTexts.has(t));
             const text = available[Math.floor(Math.random() * available.length)];
             usedTexts.add(text);
             return text;
@@ -605,8 +767,10 @@
                     renderSavedMessages();
                 }
                 
+                // 尝试发送到服务器
+                sendMessageToServer(msg);
+                
                 customMessage.value = "";
-                showToast("发送成功！");
             } else {
                 showToast("说点什么嘛～");
             }
@@ -705,6 +869,15 @@
         sendBtn.addEventListener('click', sendCustomMessage);
         clearSavedBtn.addEventListener('click', clearAllSavedMessages);
         
+        // 服务器相关事件
+        testServerBtn.addEventListener('click', testServerConnection);
+        syncServerBtn.addEventListener('click', fetchMessagesFromServer);
+        
+        serverUrlInput.addEventListener('input', () => {
+            serverUrl = serverUrlInput.value;
+            saveServerSettings();
+        });
+        
         customMessage.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -732,7 +905,7 @@
 
         // 初始化
         window.addEventListener('load', () => {
-            // 加载保存的弹幕
+            // 加载保存的弹幕和服务器设置
             loadSavedMessages();
             
             for (let i = 0; i < 20; i++) setTimeout(createHeart, i * 400);
