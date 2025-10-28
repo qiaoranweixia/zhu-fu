@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>熊猫烧香 · 共享弹幕版</title>
+    <title>熊猫烧香 · Heart 满屏铺满版</title>
     <style>
         *, *::before, *::after {
             margin: 0;
@@ -105,6 +105,8 @@
             transition: all 0.3s ease;
             opacity: 0;
             pointer-events: none;
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         .control-panel.show {
@@ -174,6 +176,7 @@
             pointer-events: none;
             animation: floatHeart 10s infinite ease-out;
             user-select: none;
+            /* 强制使用系统字体支持 Heart */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
@@ -288,36 +291,59 @@
             color: #ff6b6b;
         }
 
-        /* 服务器状态区域 */
-        .server-status {
+        /* 文件选择区域 */
+        .file-upload-section {
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid rgba(0, 0, 0, 0.1);
         }
 
-        .server-status h4 {
+        .file-upload-section h4 {
             margin-bottom: 8px;
             font-size: 14px;
             color: #ff6b6b;
             text-align: center;
         }
 
-        .server-info {
-            font-size: 12px;
+        .file-input-wrapper {
+            position: relative;
             margin-bottom: 8px;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .file-input-label {
+            display: block;
+            background: #4ECDC4;
+            color: white;
+            padding: 9px 11px;
+            border-radius: 22px;
             text-align: center;
-            padding: 5px;
-            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 600;
         }
 
-        .server-info.connected {
-            background: rgba(46, 196, 182, 0.2);
-            color: #2EC4B6;
+        .file-input-label:hover,
+        .file-input-label:active {
+            background: #2EC4B6;
+            transform: translateY(-1px);
         }
 
-        .server-info.disconnected {
-            background: rgba(255, 107, 107, 0.2);
-            color: #ff6b6b;
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+            word-break: break-all;
         }
 
         /* 响应式 */
@@ -349,16 +375,34 @@
 </head>
 <body>
     <div class="control-panel">
-        <h3>熊猫烧香 · 共享弹幕版</h3>
+        <h3>熊猫烧香 · 满屏 Heart</h3>
         <button id="startBtn">开始入侵</button>
         <button id="clearBtn">紧急清屏</button>
         
         <div class="music-info" id="musicInfo">背景音乐加载中...</div>
         
+        <div class="file-upload-section">
+            <h4>选择本地音乐</h4>
+            <div class="file-input-wrapper">
+                <input type="file" id="musicFile" accept="audio/mp3,audio/*">
+                <label class="file-input-label" for="musicFile">选择 MP3 文件</label>
+            </div>
+            <div class="file-info" id="musicFileInfo">未选择文件</div>
+        </div>
+        
+        <div class="file-upload-section">
+            <h4>选择本地弹幕</h4>
+            <div class="file-input-wrapper">
+                <input type="file" id="danmakuFile" accept=".txt,text/plain">
+                <label class="file-input-label" for="danmakuFile">选择 TXT 文件</label>
+            </div>
+            <div class="file-info" id="danmakuFileInfo">未选择文件</div>
+        </div>
+        
         <div class="send-message">
             <h4>发送你的爱</h4>
             <textarea id="customMessage" placeholder="说点甜甜的话..."></textarea>
-            <button id="sendBtn">发送到所有人</button>
+            <button id="sendBtn">发送</button>
         </div>
         
         <div class="saved-messages">
@@ -366,15 +410,7 @@
             <div class="saved-list" id="savedList">
                 <!-- 保存的弹幕将在这里显示 -->
             </div>
-            <button id="clearSavedBtn">清空本地弹幕</button>
-        </div>
-        
-        <div class="server-status">
-            <h4>服务器状态</h4>
-            <div class="server-info disconnected" id="serverInfo">
-                服务器连接失败 - 仅使用本地弹幕
-            </div>
-            <button id="syncServerBtn">同步服务器弹幕</button>
+            <button id="clearSavedBtn">清空保存的弹幕</button>
         </div>
     </div>
     
@@ -426,7 +462,8 @@
         let audioElement = null;
         let audioUnlocked = false;
         let savedMessages = []; // 存储用户保存的弹幕
-        let serverMessages = []; // 存储从服务器获取的弹幕
+        let currentMusicFile = null;
+        let customDanmaku = []; // 用户导入的弹幕
 
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -438,15 +475,14 @@
         const unlockAudio = document.getElementById('unlockAudio');
         const savedList = document.getElementById('savedList');
         const clearSavedBtn = document.getElementById('clearSavedBtn');
-        const serverInfo = document.getElementById('serverInfo');
-        const syncServerBtn = document.getElementById('syncServerBtn');
+        const musicFileInput = document.getElementById('musicFile');
+        const danmakuFileInput = document.getElementById('danmakuFile');
+        const musicFileInfo = document.getElementById('musicFileInfo');
+        const danmakuFileInfo = document.getElementById('danmakuFileInfo');
 
         const INITIAL_DELAY = 50;
         const CONTINUOUS_INTERVAL = 90;
         const MAX_MESSAGES_ON_SCREEN = 80;
-        
-        // 服务器脚本路径 - 与HTML在同一目录
-        const SERVER_SCRIPT = 'danmu_server.php';
 
         // 初始化 - 从本地存储加载保存的弹幕
         function loadSavedMessages() {
@@ -455,9 +491,6 @@
                 savedMessages = JSON.parse(saved);
                 renderSavedMessages();
             }
-            
-            // 自动从服务器获取弹幕
-            fetchMessagesFromServer();
         }
 
         // 保存弹幕到本地存储
@@ -527,115 +560,6 @@
             }
         }
 
-        // 发送弹幕到服务器
-        function sendMessageToServer(message) {
-            const params = new URLSearchParams();
-            params.append('message', message);
-            params.append('action', 'save');
-            
-            fetch(SERVER_SCRIPT + '?' + params.toString(), {
-                method: 'GET'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('服务器响应错误: ' + response.status);
-                }
-                return response.text();
-            })
-            .then(text => {
-                // 尝试解析JSON，如果失败则使用文本
-                try {
-                    const data = JSON.parse(text);
-                    if (data.status === 'success') {
-                        console.log('弹幕已发送到服务器');
-                        showToast('弹幕已发送到服务器，所有人可见！');
-                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
-                        serverInfo.className = 'server-info connected';
-                    } else {
-                        throw new Error(data.message || '服务器返回错误');
-                    }
-                } catch (e) {
-                    // 如果不是JSON，检查是否包含成功信息
-                    if (text.includes('success') || text.includes('成功')) {
-                        console.log('弹幕已发送到服务器');
-                        showToast('弹幕已发送到服务器，所有人可见！');
-                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
-                        serverInfo.className = 'server-info connected';
-                    } else {
-                        throw new Error('服务器返回非JSON响应: ' + text);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('发送到服务器失败:', error);
-                showToast('服务器发送失败，弹幕仅保存在本地');
-                serverInfo.textContent = '服务器连接失败 - 仅使用本地弹幕';
-                serverInfo.className = 'server-info disconnected';
-            });
-        }
-
-        // 从服务器获取弹幕
-        function fetchMessagesFromServer() {
-            const params = new URLSearchParams();
-            params.append('action', 'get');
-            
-            fetch(SERVER_SCRIPT + '?' + params.toString(), {
-                method: 'GET'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('服务器响应错误: ' + response.status);
-                }
-                return response.text();
-            })
-            .then(text => {
-                // 尝试解析JSON，如果失败则使用文本
-                try {
-                    const data = JSON.parse(text);
-                    if (data.status === 'success') {
-                        // 将服务器弹幕添加到本地弹幕池
-                        data.messages.forEach(msg => {
-                            if (!savedMessages.includes(msg)) {
-                                savedMessages.push(msg);
-                            }
-                        });
-                        
-                        saveMessagesToStorage();
-                        renderSavedMessages();
-                        showToast(`从服务器获取了 ${data.messages.length} 条弹幕`);
-                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
-                        serverInfo.className = 'server-info connected';
-                    } else {
-                        throw new Error(data.message || '服务器返回错误');
-                    }
-                } catch (e) {
-                    // 如果不是JSON，尝试解析文本格式
-                    const lines = text.split('\n').filter(line => line.trim());
-                    if (lines.length > 0) {
-                        lines.forEach(msg => {
-                            if (!savedMessages.includes(msg)) {
-                                savedMessages.push(msg);
-                            }
-                        });
-                        
-                        saveMessagesToStorage();
-                        renderSavedMessages();
-                        showToast(`从服务器获取了 ${lines.length} 条弹幕`);
-                        serverInfo.textContent = '服务器连接正常 - 弹幕已共享';
-                        serverInfo.className = 'server-info connected';
-                    } else {
-                        throw new Error('服务器返回空响应');
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('从服务器获取弹幕失败:', error);
-                showToast('从服务器获取弹幕失败，仅使用本地弹幕');
-                serverInfo.textContent = '服务器连接失败 - 仅使用本地弹幕';
-                serverInfo.className = 'server-info disconnected';
-            });
-        }
-
         // 解锁音频
         function unlockAudioContext() {
             if (audioUnlocked) return;
@@ -647,13 +571,19 @@
 
         function initBackgroundMusic() {
             if (!audioUnlocked) return;
-            audioElement = new Audio("a.mp3");
+            if (currentMusicFile) {
+                // 使用用户选择的音乐文件
+                audioElement = new Audio(currentMusicFile);
+            } else {
+                // 使用默认音乐
+                audioElement = new Audio("a.mp3");
+            }
             audioElement.loop = true;
             audioElement.volume = 0.2;
             audioElement.play().then(() => {
-                musicInfo.textContent = "背景音乐: a.mp3（播放中）";
+                musicInfo.textContent = "背景音乐: " + (currentMusicFile ? "用户上传" : "a.mp3") + "（播放中）";
             }).catch(() => {
-                musicInfo.textContent = "背景音乐: a.mp3（已加载）";
+                musicInfo.textContent = "背景音乐: " + (currentMusicFile ? "用户上传" : "a.mp3") + "（已加载）";
             });
         }
 
@@ -666,11 +596,15 @@
         }
 
         function getRandomUnusedText() {
-            // 合并本地弹幕和保存的弹幕
-            const allMessages = [...careTexts, ...savedMessages];
+            // 优先使用自定义弹幕
+            if (customDanmaku.length > 0) {
+                const customIndex = Math.floor(Math.random() * customDanmaku.length);
+                return customDanmaku[customIndex];
+            }
             
-            if (usedTexts.size >= allMessages.length) usedTexts.clear();
-            const available = allMessages.filter(t => !usedTexts.has(t));
+            // 如果没有自定义弹幕，使用默认弹幕
+            if (usedTexts.size >= careTexts.length) usedTexts.clear();
+            const available = careTexts.filter(t => !usedTexts.has(t));
             const text = available[Math.floor(Math.random() * available.length)];
             usedTexts.add(text);
             return text;
@@ -765,10 +699,8 @@
                     renderSavedMessages();
                 }
                 
-                // 发送到服务器
-                sendMessageToServer(msg);
-                
                 customMessage.value = "";
+                showToast("发送成功！");
             } else {
                 showToast("说点什么嘛～");
             }
@@ -850,6 +782,66 @@
             setTimeout(() => h.remove(), 1000);
         }
 
+        // 处理音乐文件选择
+        function handleMusicFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('audio/')) {
+                showToast('请选择音频文件');
+                return;
+            }
+            
+            const fileURL = URL.createObjectURL(file);
+            currentMusicFile = fileURL;
+            musicFileInfo.textContent = `已选择: ${file.name}`;
+            
+            // 如果已经解锁音频，立即切换音乐
+            if (audioUnlocked) {
+                if (audioElement) {
+                    audioElement.pause();
+                }
+                initBackgroundMusic();
+            }
+            
+            showToast('音乐文件已加载');
+        }
+
+        // 处理弹幕文件选择
+        function handleDanmakuFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.txt') && file.type !== 'text/plain') {
+                showToast('请选择TXT文件');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                // 按行分割并过滤空行
+                const lines = content.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0);
+                
+                if (lines.length === 0) {
+                    showToast('文件为空或格式不正确');
+                    return;
+                }
+                
+                customDanmaku = lines;
+                danmakuFileInfo.textContent = `已选择: ${file.name} (${lines.length}条弹幕)`;
+                showToast(`已加载 ${lines.length} 条弹幕`);
+            };
+            
+            reader.onerror = function() {
+                showToast('文件读取失败');
+            };
+            
+            reader.readAsText(file);
+        }
+
         // 事件监听器
         startBtn.addEventListener('click', () => {
             if (animationActive) {
@@ -866,7 +858,6 @@
         clearBtn.addEventListener('click', clearMessages);
         sendBtn.addEventListener('click', sendCustomMessage);
         clearSavedBtn.addEventListener('click', clearAllSavedMessages);
-        syncServerBtn.addEventListener('click', fetchMessagesFromServer);
         
         customMessage.addEventListener('keypress', e => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -879,6 +870,10 @@
             e.stopPropagation();
             controlPanel.classList.toggle('show');
         });
+
+        // 文件选择事件
+        musicFileInput.addEventListener('change', handleMusicFileSelect);
+        danmakuFileInput.addEventListener('change', handleDanmakuFileSelect);
 
         document.addEventListener('click', e => {
             if (!controlPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
