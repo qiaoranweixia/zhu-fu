@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>熊猫烧香 · Heart 满屏铺满版增强版</title>
     <style>
+        /* 样式代码保持不变，与原始代码相同 */
         *, *::before, *::after {
             margin: 0;
             padding: 0;
@@ -350,6 +351,25 @@
             0% { transform: scale(0) rotate(0deg); opacity: 1; }
             100% { transform: scale(1.6) rotate(360deg); opacity: 0; }
         }
+
+        /* 新增：加载指示器 */
+        .loading-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 1000;
+            font-size: 14px;
+            display: none;
+        }
+
+        .loading-indicator.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -385,6 +405,9 @@
     </div>
     
     <div class="settings-btn">⚙️</div>
+    
+    <!-- 新增：加载指示器 -->
+    <div class="loading-indicator" id="loadingIndicator">加载中...</div>
 
     <!-- 静音占位音频（解锁 autoplay） -->
     <audio id="unlockAudio" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="></audio>
@@ -413,17 +436,19 @@
             "你是我见过最可爱的人 (づ￣ ³￣)づ", "要开心到飞起！(✿◠‿◠)", "你就是我的小太阳 (✨)", 
             "想和你一起吃火锅 (๑•̀ㅁ•́ฅ)", "你是最棒的！(☆▽☆)", "今天也要被宠爱 (｡❤‿❤｡)", 
             "我只想对你好 (๑´•.̫ • `๑)", "你是我最珍贵的宝藏 (˶ᵔ ᵕ ᵔ˶)", "要一直一直开心哦 (´▽`ʃƪ)❤",
-            "今天过得开心嘛？(๑•̀ㅁ•́ฅ)","保持好心情哦～(♥ω♥)","所有烦恼都消失吧～(⬇︎‿⬇︎)",
-            "期待下一次见面！(๑・̀ㅂ・́)و✧","顺顺利利，万事如意！(✨)","早点休息哦，别熬夜～(♥♥)",
-            "别熬夜，要早睡早起～(✨)","要好好爱自己呀～(♡∀♡📌)","多喝水哦～要健康！(✿◠‿◠)",
-            "每天都要元气满满呀～(๑•̀ㅂ•́)و✧","天冷了，多穿点衣服哦～(♡^▽^♡)","记得吃水果呀～营养满满～(✿◠‿◠)",
+            "今天过得开心嘛？(๑•̀ㅁ•́ฅ)",
+            "所有烦恼都消失吧～(⬇︎‿⬇︎)",
+            "保持好心情哦～(♥ω♥)",
+            "期待下一次见面！(๑・̀ㅂ・́)و✧",
+            "顺顺利利，万事如意！(✨)",
+            "早点休息哦，别熬夜～(♥♥)",
+            "别熬夜，要早睡早起～(✨)",
+            "要好好爱自己呀～(♡∀♡📌)",
+            "多喝水哦～要健康！(✿◠‿◠)",
+            "每天都要元气满满呀～(๑•̀ㅂ•́)و✧",
+            "天冷了，多穿点衣服哦～(♡^▽^♡)",
+            "记得吃水果呀～营养满满～(✿◠‿◠)",
             "梦想成真吧"
-
-
-
-
-
-
         ];
 
         let careTexts = [...defaultTexts];
@@ -446,6 +471,7 @@
         let audioUnlocked = false;
         let savedMessages = []; // 存储用户保存的弹幕
 
+        // DOM 元素
         const startBtn = document.getElementById('startBtn');
         const clearBtn = document.getElementById('clearBtn');
         const controlPanel = document.querySelector('.control-panel');
@@ -461,6 +487,7 @@
         const selectDanmakuBtn = document.getElementById('selectDanmakuBtn');
         const musicFileInput = document.getElementById('musicFile');
         const danmakuFileInput = document.getElementById('danmakuFile');
+        const loadingIndicator = document.getElementById('loadingIndicator');
 
         const INITIAL_DELAY = 50;
         const CONTINUOUS_INTERVAL = 90;
@@ -470,14 +497,24 @@
         function loadSavedMessages() {
             const saved = localStorage.getItem('savedMessages');
             if (saved) {
-                savedMessages = JSON.parse(saved);
-                renderSavedMessages();
+                try {
+                    savedMessages = JSON.parse(saved);
+                    renderSavedMessages();
+                } catch (e) {
+                    console.error('加载保存的弹幕失败:', e);
+                    savedMessages = [];
+                }
             }
         }
 
         // 保存弹幕到本地存储
         function saveMessagesToStorage() {
-            localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
+            try {
+                localStorage.setItem('savedMessages', JSON.stringify(savedMessages));
+            } catch (e) {
+                console.error('保存弹幕失败:', e);
+                showToast('保存失败，存储空间可能已满');
+            }
         }
 
         // 渲染已保存的弹幕列表
@@ -578,6 +615,8 @@
         function loadSelectedMusic(file) {
             if (!audioUnlocked) return;
             
+            showLoading('加载音乐文件中...');
+            
             if (audioElement) {
                 audioElement.pause();
                 audioElement = null;
@@ -587,6 +626,15 @@
             audioElement = new Audio(url);
             audioElement.loop = true;
             audioElement.volume = 0.2;
+            
+            audioElement.addEventListener('canplaythrough', () => {
+                hideLoading();
+            });
+            
+            audioElement.addEventListener('error', () => {
+                hideLoading();
+                showToast('音乐文件加载失败');
+            });
             
             audioElement.play().then(() => {
                 musicInfo.textContent = `背景音乐: ${file.name}（播放中）`;
@@ -601,9 +649,12 @@
 
         // 加载用户选择的弹幕文件
         function loadSelectedDanmaku(file) {
+            showLoading('加载弹幕文件中...');
+            
             const reader = new FileReader();
             
             reader.onload = function(e) {
+                hideLoading();
                 const content = e.target.result;
                 // 按行分割并过滤空行
                 const lines = content.split('\n')
@@ -623,6 +674,7 @@
             };
             
             reader.onerror = function() {
+                hideLoading();
                 showToast('弹幕文件读取失败，使用默认弹幕');
                 careTexts = [...defaultTexts];
                 fileInfo.textContent = "当前文件: 默认";
@@ -791,6 +843,16 @@
             }, 1500);
         }
 
+        // 显示/隐藏加载指示器
+        function showLoading(text = '加载中...') {
+            loadingIndicator.textContent = text;
+            loadingIndicator.classList.add('show');
+        }
+
+        function hideLoading() {
+            loadingIndicator.classList.remove('show');
+        }
+
         // 爱心效果
         function createHeart() {
             const heart = document.createElement('div');
@@ -906,4 +968,4 @@
         });
     </script>
 </body>
-</html>
+</html
